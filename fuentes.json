@@ -11,7 +11,7 @@
     {"id": "futbol", "nombre": "UD Las Palmas y fútbol", "corto": "Fútbol", "horas": 48, "max": 15, "portada": 4}
   ],
   "fuentes": [
-    {"nombre": "Televisión Canaria (RTVC)", "tipo": "Radio y televisión pública de Canarias", "seccion": "canarias", "max": 12,
+    {"nombre": "Televisión Canaria (RTVC)", "tipo": "Radio y televisión pública de Canarias", "seccion": "canarias", "max": 12, "exigir": "canari|gran canaria|tenerife|lanzarote|fuerteventura|la palma|gomera|el hierro|graciosa|las palmas|isla|archipielago|cabildo|clavijo|galdar|telde|arucas|agaete|teror|ingenio|mogan|tirajana|maspalomas|santa cruz|la laguna|arrecife|puerto del rosario|valverde|teide|calima|guagua|platano|cayuco|migrante|parlamento regional",
      "feeds": ["wp:https://rtvc.es", "https://rtvc.es/?feed=rss2", "https://rtvc.es/feed/rss2/", "https://rtvc.es/feed/atom/"], "home": "https://rtvc.es/"},
     {"nombre": "Canarias Ahora", "tipo": "Edición canaria de elDiario.es, financiado por sus socios", "seccion": "canarias", "max": 14,
      "feeds": ["https://www.eldiario.es/rss/canariasahora/"], "home": "https://www.eldiario.es/canariasahora/"},
@@ -24,7 +24,7 @@
 
     {"nombre": "EFE", "tipo": "Agencia EFE, agencia pública de noticias", "seccion": "espana", "max": 8,
      "feeds": ["wp:https://efe.com|espana", "https://efe.com/espana/?feed=rss2", "https://efe.com/espana/feed/atom/"], "home": "https://efe.com/espana/"},
-    {"nombre": "RTVE Noticias", "tipo": "Radio y televisión pública de España", "seccion": "espana", "max": 10,
+    {"nombre": "RTVE Noticias", "tipo": "Radio y televisión pública de España", "seccion": "espana", "max": 10, "url_debe": "rtve\\.es/noticias/", "diagnostico": true,
      "feeds": ["https://www.rtve.es/api/noticias.json?size=60", "https://api.rtve.es/api/noticias.json?size=60"], "home": "https://www.rtve.es/noticias/"},
     {"nombre": "Europa Press", "tipo": "Agencia de noticias", "seccion": "espana", "max": 10, "titulo_canal": "nacional|espana|politica",
      "feeds": ["https://www.europapress.es/rss/rss.aspx?ch=00066"], "home": "https://www.europapress.es/nacional/"},

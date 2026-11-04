@@ -64,7 +64,8 @@ DEPORTE_TXT = re.compile(
     r"lucha canaria|gol|goles|golazo|fichaje|fichajes|jugador|jugadora|jugadores|jugadoras|delantero|centrocampista|portero del|entrenador del|seleccionador|"
     r"juegos olimpicos|olimpiadas|paralimpicos|tour de francia|vuelta a espana|giro de italia|ciclista|ciclistas|"
     r"balonmano|waterpolo|medalla de (oro|plata|bronce)|liga f|primera rfef|segunda division|primera division|"
-    r"jornada \d+ de|partidazo|derbi)\b")
+    r"jornada \d+ de|partidazo|derbi|aficion (del|de la ud|amarilla|blanquiazul)|tinerfenismo|heliodoro|"
+    r"estadio de gran canaria|jesus de miguel)\b")
 DEPORTE_CAT = re.compile(r"^(deportes?|futbol|baloncesto|motor|tenis|ciclismo|golf|atletismo|balonmano|"
                          r"lucha canaria|formula 1|motogp|polideportivo|ud las palmas|cd tenerife|mas deporte)$")
 # Fútbol: sí entra, en su propia sección (con la UD Las Palmas arriba). El resto de deportes no.
@@ -93,6 +94,10 @@ REGUETON = re.compile(r"\b(reggaet\w*|reguet\w*|regaet\w*|perreo|dembow|trap lat
                       r"don omar|wisin|yandel|farruko|lunay|eladio carrion|natanael cano|tokischa|el alfa|bad gyal|"
                       r"daddy|nathy peluso|cazzu|tini|emilia mernes|duki|bresh|omar montes|rels b|morad|beny jr|"
                       r"saiko|myke|lola indigo|aitana ocana)\b|(?<!francisco de )\bquevedo\b")
+# catalán, gallego, euskera…: con dos señales o más, el titular no está en castellano
+OTRO_IDIOMA = re.compile(r"\b[ld][’'](?!hondt)\w|\b(amb|els|dels|diumenge|dilluns|dimarts|dimecres|dijous|divendres|"
+                         r"dissabte|perque|aquesta|aquest|tambe|vinent|aixo|avui|ahir|dema|nova|nou|nous|feina|i)\b")
+MARCADOR = re.compile(r"\(\s*\d{1,2}\s*-\s*\d{1,2}\s*\)")
 OPINION_URL = re.compile(r"/(opinion|opiniones|tribuna|tribunas|columnas?|editorial|editoriales|blogs?/opinion|"
                          r"cartas-al-director|humor|vinetas?)(/|-|$)", re.I)
 OPINION_CAT = re.compile(r"^(opinion|opiniones|tribuna|columna|columnas|editorial|cartas al director|vineta|humor|"
@@ -357,9 +362,17 @@ def leer_json(datos, base=""):
             m = re.match(r"(\d{2})-(\d{2})-(\d{4}) (\d{2}:\d{2}(:\d{2})?)$", f or "")  # 04-11-2026 08:00:00 (RTVE)
             if m:
                 f = "%s-%s-%sT%s" % (m.group(3), m.group(2), m.group(1), m.group(4))
+            cats = []
+            for k in ("mainTopic", "topic", "section", "seccion", "category", "categoria", "tematica", "language",
+                      "idioma", "contentType", "type", "mainCategory"):
+                v = d.get(k)
+                if isinstance(v, dict):
+                    v = v.get("name") or v.get("title") or v.get("titulo") or v.get("rendered")
+                if isinstance(v, str) and v.strip():
+                    cats.append(v.strip())
             notas.append({"t": t, "u": urllib.parse.urljoin(base, u), "d": fecha_de(f),
                           "r": valor(d, "excerpt", "summary", "description", "entradilla", "resumen", "subtitle"),
-                          "cats": []})
+                          "cats": cats, "_crudo": {k: (str(v)[:60]) for k, v in list(d.items())[:25]}})
         if len(notas) >= 3:
             return notas
     return []
@@ -556,9 +569,25 @@ def motivo_descarte(n, filtro_opinion=True):
         return "reguetón"
     if re.search(r"(?i)/(directo|en-directo|live)(/|-|$)|-directo-|-en-directo", ruta):
         return "cebo"
-    if t.upper() == t and len(t) > 25 and re.search(r"[a-z]", sin_tildes(n["t"]).lower()) and n["t"] == n["t"].upper():
-        return "cebo"
+    if len(OTRO_IDIOMA.findall(t)) >= 2:
+        return "otro idioma"
+    if MARCADOR.search(t):
+        return "deporte"
     return None
+
+
+def es_ud(n):
+    return n["f"] == "UD Las Palmas" or bool(UD.search(sin_tildes(n["t"]))) or "ud las palmas" in sin_tildes(n["r"])
+
+
+def en_minusculas(t):
+    """Titulares escritos EN MAYÚSCULAS → normales (con los números romanos en mayúscula)."""
+    letras = [c for c in t if c.isalpha()]
+    if len(letras) < 15 or sum(c.isupper() for c in letras) < 0.8 * len(letras):
+        return t
+    t = t.lower()
+    t = re.sub(r"(^|[.!?«\"“]\s*)([a-záéíóúñü])", lambda m: m.group(1) + m.group(2).upper(), t)
+    return re.sub(r"\b(?=[ivxlc]+\b)(x{0,3})(ix|iv|v?i{0,3})\b", lambda m: m.group(0).upper(), t)
 
 
 def palabras(t):
@@ -590,7 +619,7 @@ def preparar(config, resultados):
         estado["validas"] = 0
         urls = set()
         for n in notas:
-            n["t"] = limpiar_texto(n["t"], 220)
+            n["t"] = en_minusculas(limpiar_texto(n["t"], 220))
             n["r"] = limpiar_texto(n["r"], 1200)
             if n["u"] in urls:
                 continue
@@ -607,10 +636,14 @@ def preparar(config, resultados):
                     continue
             n["s"] = sec
             motivo = motivo_descarte(n, not f.get("sin_filtro_opinion"))
+            if not motivo and f.get("url_debe") and not re.search(f["url_debe"], n["u"]):
+                motivo = "no es una noticia (programa, promoción…)"
+            if not motivo and f.get("exigir") and not re.search(f["exigir"], sin_tildes(n["t"] + " " + n["r"])):
+                motivo = "fuera de tema de la sección"
             if (motivo == "deporte" or sec == "futbol") and "futbol" in secciones:
                 # el fútbol va a su sección; el resto de deportes, fuera
                 texto = sin_tildes(n["t"] + " " + n["r"][:200])
-                if len(FUTBOL.findall(texto)) > len(OTROS_DEPORTES.findall(texto)) or \
+                if len(FUTBOL.findall(texto)) + len(MARCADOR.findall(texto)) > len(OTROS_DEPORTES.findall(texto)) or \
                         (sec == "futbol" and not OTROS_DEPORTES.search(texto)):
                     n["s"] = sec = "futbol"
                     motivo = None if motivo in (None, "deporte") else motivo
@@ -658,7 +691,7 @@ def preparar(config, resultados):
                 p += 5 * 3600
             if sid == "ciencia" and ASTRO.search(texto):
                 p += 30 * 3600
-            if sid == "futbol" and UD.search(texto):
+            if sid == "futbol" and es_ud(n):
                 p += 72 * 3600  # la UD Las Palmas, siempre arriba
             return p
         dentro.sort(key=puntos, reverse=True)
@@ -670,7 +703,7 @@ def preparar(config, resultados):
             final.append(n)
             if len(final) >= sec.get("max", 20):
                 break
-        final.sort(key=lambda n: (sid == "futbol" and bool(UD.search(sin_tildes(n["t"] + " " + n["r"]))),
+        final.sort(key=lambda n: (sid == "futbol" and es_ud(n),
                                   n["d"] or AHORA - dt.timedelta(hours=12)), reverse=True)
         sec["notas"] = final
     return secciones, descartes
@@ -965,6 +998,8 @@ def main():
         if not e["ok"]:
             for err in e["errores"]:
                 print("      · " + err[:200])
+        if notas and "_crudo" in notas[0] and f.get("diagnostico"):
+            print("      ejemplo: %s" % json.dumps(notas[0]["_crudo"], ensure_ascii=False)[:700])
         for c in e.get("canales_en_pagina", []) if not e["ok"] else []:
             print("      canal visto: " + c)
         for c in e.get("candidatos", []) if not e["ok"] else []:
