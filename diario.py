@@ -348,6 +348,11 @@ def cargar_fuente(f, muestras=None):
             if exigido and not re.search(exigido, sin_tildes(titulo)):
                 estado["errores"].append("%s → es otro canal («%s»)" % (url, titulo))
                 return None
+            fechas = [n["d"] for n in notas if n["d"]]
+            dias = f.get("_frescura", 60)
+            if fechas and max(fechas) < AHORA - dt.timedelta(days=dias):
+                estado["errores"].append("%s → canal sin noticias nuevas desde el %s" % (url, max(fechas).strftime("%d/%m/%Y")))
+                return None
             estado.setdefault("titulos", []).append(titulo)
             estado.update(ok=True, canal=url, leidas=len(notas))
             return notas
@@ -393,6 +398,7 @@ def cargar_fuente(f, muestras=None):
         except Exception as e:  # noqa: BLE001
             estado["errores"].append("portada %s → %s" % (f["home"], str(e)[:120]))
             candidatos = []
+        estado["candidatos"] = candidatos[:12]
         for url in candidatos[:6]:
             if url in probados:
                 continue
@@ -804,6 +810,10 @@ def main():
     a = ap.parse_args()
     config = json.load(open(a.fuentes, encoding="utf-8"))
     fuentes = [f for f in config["fuentes"] if f.get("activa", True)]
+    horas = {s["id"]: s.get("horas", 36) for s in config["secciones"]}
+    for f in fuentes:
+        # un canal de noticias que lleva días sin publicar está abandonado: se busca otro
+        f["_frescura"] = f.get("frescura_dias", 4 if horas.get(f.get("seccion"), 999) <= 48 else 60)
     print("Leyendo %d fuentes…" % len(fuentes))
     with concurrent.futures.ThreadPoolExecutor(max_workers=8) as ex:
         resultados = list(ex.map(lambda f: cargar_fuente(f, a.muestras), fuentes))
@@ -814,8 +824,10 @@ def main():
         if not e["ok"]:
             for err in e["errores"]:
                 print("      · " + err[:200])
-        for c in e.get("canales_en_pagina", []):
+        for c in e.get("canales_en_pagina", []) if not e["ok"] else []:
             print("      canal visto: " + c)
+        for c in e.get("candidatos", []) if not e["ok"] else []:
+            print("      candidato en portada: " + c)
     secciones, descartes = preparar(config, resultados)
     print("Titulares descartados:")
     for d in sorted(descartes, key=lambda d: (d["motivo"], d["fuente"])):
