@@ -60,7 +60,7 @@ DEPORTE_TXT = re.compile(
     r"villarreal|real sociedad|osasuna|rayo vallecano|mundial de futbol|mundial de clubes|eurocopa|copa del rey|supercopa|"
     r"formula 1|formula uno|motogp|grand prix|gran premio de|tenis|tenista|nadal|alcaraz|djokovic|roland garros|wimbledon|"
     r"open de australia|us open|copa davis|nba|acb|euroliga|eurobasket|dreamland|cb gran canaria|la laguna tenerife|"
-    r"lucha canaria|gol|goles|golazo|fichaje|fichajes|delantero|centrocampista|portero del|entrenador del|seleccionador|"
+    r"lucha canaria|gol|goles|golazo|fichaje|fichajes|jugador|jugadora|jugadores|jugadoras|delantero|centrocampista|portero del|entrenador del|seleccionador|"
     r"juegos olimpicos|olimpiadas|paralimpicos|tour de francia|vuelta a espana|giro de italia|ciclista|ciclistas|"
     r"balonmano|waterpolo|medalla de (oro|plata|bronce)|liga f|primera rfef|segunda division|primera division|"
     r"jornada \d+ de|partidazo|derbi)\b")
@@ -86,12 +86,13 @@ HISTORIA_KW = re.compile(r"\b(arqueolog\w*|historia|historiador\w*|historic\w*|a
                          r"maya\w*|inca\w*|azteca\w*|guanche\w*|aborigen\w*|momia\w*|excavacion\w*|paleolitic\w*|"
                          r"neolitic\w*|bronce|hierro|siglo [ivxlc]+|griego\w*|grecia|mesopotamia\w*|fenici\w*|vikingo\w*|"
                          r"pirami\w*|templo\w*|ruinas|tumba\w*|necropolis|papiro\w*|epigraf\w*|monarqui\w*|guerra civil|"
-                         r"segunda guerra mundial|primera guerra mundial)\b")
+                         r"segunda guerra mundial|primera guerra mundial|edad de (la )?(piedra|madera)|"
+                         r"edad del (bronce|hierro)|arqueologic\w*)\b")
 CIENCIA_KW = re.compile(r"\b(astronom\w*|planeta\w*|galaxia\w*|estrella\w*|universo|nasa|telescopio\w*|cometa\w*|"
                         r"asteroide\w*|luna|marte|jupiter|saturno|espacial\w*|cosmos|fisic\w*|quimic\w*|biolog\w*|genetic\w*|"
                         r"genoma\w*|evolucion\w*|dinosaurio\w*|volcan\w*|terremoto\w*|clima\w*|climatic\w*|especie\w*|"
-                        r"celula\w*|cientific\w*|investigador\w*|matematic\w*|cerebro\w*|virus|bacteria\w*|fosil\w*|"
-                        r"oceano\w*|ecolog\w*|energia\w*|medicina|vacuna\w*|neurona\w*|atomo\w*|particula\w*|tecnologia\w*)\b")
+                        r"celula\w*|matematic\w*|cerebro\w*|virus|bacteria\w*|fosil\w*|lago\w*|rio|rios|"
+                        r"oceano\w*|ecolog\w*|vacuna\w*|neurona\w*|atomo\w*|particula\w*|cuantic\w*|venus|mercurio)\b")
 TROCITOS_FINALES = [
     r"\s*(la entrada|el post|the post|el art[ií]culo)\s.+?\s(se public[oó] primero en|apareci[oó] primero en|appeared first on|se public[oó] en)\s.+$",
     r"\s*(seguir leyendo|leer m[aá]s|sigue leyendo|continue reading|lee la noticia completa|ver m[aá]s|m[aá]s informaci[oó]n)\s*(\.|:|»|›|→)?\s*$",
@@ -257,6 +258,14 @@ def leer_canal(datos, base=""):
     return notas[:80]
 
 
+def titulo_canal(datos):
+    m = re.search(rb"(?is)<(?:channel|feed)\b.*?<title[^>]*>(.*?)</title>", datos[:20000])
+    if not m:
+        return ""
+    t = re.sub(r"(?s)<!\[CDATA\[(.*?)\]\]>", r"\1", m.group(1).decode("utf-8", "replace"))
+    return limpiar_texto(t, 120)
+
+
 def leer_canal_a_mano(datos, base=""):
     """Último recurso para canales con XML roto."""
     txt = datos.decode("utf-8", "replace")
@@ -334,6 +343,12 @@ def cargar_fuente(f, muestras=None):
         parece_web = cabeza.startswith(b"<!doctype html") or cabeza.startswith(b"<html")
         notas = [] if parece_web else [n for n in leer_canal(datos, final) if n["t"].strip() and n["u"].startswith("http")]
         if notas:
+            titulo = titulo_canal(datos)
+            exigido = f.get("titulo_canal")
+            if exigido and not re.search(exigido, sin_tildes(titulo)):
+                estado["errores"].append("%s → es otro canal («%s»)" % (url, titulo))
+                return None
+            estado.setdefault("titulos", []).append(titulo)
             estado.update(ok=True, canal=url, leidas=len(notas))
             return notas
         if parece_web:
@@ -423,13 +438,13 @@ def parecidas(a, b):
 
 
 def clasificar_auto(n):
-    t = sin_tildes(n["t"] + " " + n["r"][:400])
-    h, c = len(HISTORIA_KW.findall(t)), len(CIENCIA_KW.findall(t))
-    if h and h >= c:
-        return "historia"
-    if c:
-        return "ciencia"
-    return None
+    """Reparte entre Historia y Ciencia mirando sobre todo el titular; si el tema no está claro, se descarta."""
+    t, r = sin_tildes(n["t"]), sin_tildes(n["r"][:400])
+    h = 3 * len(HISTORIA_KW.findall(t)) + len(HISTORIA_KW.findall(r))
+    c = 3 * len(CIENCIA_KW.findall(t)) + len(CIENCIA_KW.findall(r))
+    if max(h, c) < 3:
+        return None
+    return "historia" if h >= c else "ciencia"
 
 
 def preparar(config, resultados):
@@ -793,8 +808,9 @@ def main():
     with concurrent.futures.ThreadPoolExecutor(max_workers=8) as ex:
         resultados = list(ex.map(lambda f: cargar_fuente(f, a.muestras), fuentes))
     for f, notas, e in resultados:
-        print("  %-38s %s %3d  %s" % (f["nombre"][:38], "OK " if e["ok"] else "MAL", e["leidas"],
-                                    (e["canal"] or (e["errores"][-1] if e["errores"] else ""))[:90]))
+        print("  %-38s %s %3d  %s%s" % (f["nombre"][:38], "OK " if e["ok"] else "MAL", e["leidas"],
+                                      (e["canal"] or (e["errores"][-1] if e["errores"] else ""))[:90],
+                                      ("  «%s»" % " / ".join(e.get("titulos", []))[:80]) if e["ok"] else ""))
         if not e["ok"]:
             for err in e["errores"]:
                 print("      · " + err[:200])
