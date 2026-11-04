@@ -1200,7 +1200,14 @@ def preparar_lecturas(config, secciones, sin_red=False):
         # para el botón «Actualizar ahora» (solo lo pueden usar los aparatos con la llave)
         datos["_actualizar"] = {"t": token, "r": os.environ.get("GITHUB_REPOSITORY", "diariodepaco/diariodepaco.github.io"),
                                 "w": "publicar.yml"}
-        print("  Botón «Actualizar ahora»: activado")
+        try:
+            req = urllib.request.Request("https://api.github.com/repos/%s/actions/workflows/publicar.yml" % datos["_actualizar"]["r"],
+                                         headers={"Authorization": "Bearer " + token, "Accept": "application/vnd.github+json",
+                                                  "User-Agent": UA})
+            with urllib.request.urlopen(req, timeout=15) as r:
+                print("  Botón «Actualizar ahora»: activado (el permiso funciona: %s)" % r.status)
+        except Exception as e:  # noqa: BLE001
+            print("  Botón «Actualizar ahora»: el permiso NO funciona (%s)" % str(e)[:80])
     return lectura.cifrar(json.dumps(datos, ensure_ascii=False, separators=(",", ":")).encode("utf-8"), clave)
 
 
