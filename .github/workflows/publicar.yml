@@ -23,9 +23,8 @@ jobs:
   publicar:
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    environment:
-      name: github-pages
-      url: ${{ steps.despliegue.outputs.page_url }}
+    # Sin «environment»: GitHub dejó las publicaciones esperando una aprobación que nadie puede dar.
+    # deploy-pages funciona igual sin él (lo verifica con los permisos pages/id-token de arriba).
     steps:
       - uses: actions/checkout@v7
 
