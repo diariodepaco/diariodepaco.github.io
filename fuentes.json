@@ -84,7 +84,7 @@
 
     {"nombre": "EFE Agro", "tipo": "Agencia EFE, sección de agricultura y alimentación", "seccion": "bodega", "max": 6, "exigir": "vino|vinos|vinic\\w*|vitivinic\\w*|bodega\\w*|vendimia\\w*|vinedo\\w*|uva|uvas|rioja|denominacion\\w* de origen|queso\\w*|miel|mieles|apicult\\w*|platano\\w*|aguacate\\w*|mango\\w*|papaya\\w*|fruta\\w*|gastronom\\w*|enolog\\w*|sumiller\\w*|cata|catas|cava|tinto\\w*|malvasia|listan|albarino|tempranillo|garnacha|verdejo|aceite de oliva|cocina|cocinero\\w*|chef\\w*|restaurante\\w*|receta\\w*",
      "feeds": ["wp:https://efeagro.com", "https://efeagro.com/feed/"], "home": "https://efeagro.com/"},
-    {"nombre": "Vinos de Canarias", "tipo": "Denominación de Origen Islas Canarias", "seccion": "bodega", "max": 4,
+    {"nombre": "Vinos de Canarias", "activa": false, "_nota": "Su web tiene un certificado de seguridad que no es de su dominio", "tipo": "Denominación de Origen Islas Canarias", "seccion": "bodega", "max": 4,
      "feeds": ["wp:https://vinosdecanarias.es", "https://vinosdecanarias.es/feed/"], "home": "https://vinosdecanarias.es/"},
     {"nombre": "La Prensa del Rioja", "tipo": "Periódico especializado en el vino de Rioja", "seccion": "bodega", "max": 4,
      "feeds": ["https://www.laprensadelrioja.com/feed/", "wp:https://www.laprensadelrioja.com"], "home": "https://www.laprensadelrioja.com/"},

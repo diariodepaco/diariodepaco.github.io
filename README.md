@@ -21,11 +21,11 @@ No hace falta ningún servidor ni pagar nada, y Paco no necesita a Claude para n
 | Mundo | EFE, Europa Press, BBC News Mundo, France 24, DW |
 | Ciencia y espacio | Agencia SINC, Instituto de Astrofísica de Canarias, Eureka (Daniel Marín), Naukas, The Conversation |
 | Historia y arqueología | La Brújula Verde, Desperta Ferro, El Museo Canario, The Conversation |
-| La Bodega: vino y buena mesa | EFE Agro (solo vino, quesos, mieles, frutas y gastronomía), Vinos de Canarias, La Prensa del Rioja, Vinetur (solo vino y quesos); lo canario, arriba |
+| La Bodega: vino y buena mesa | EFE Agro (solo vino, quesos, mieles, frutas y gastronomía), La Prensa del Rioja, Vinetur (solo vino y quesos); lo canario, arriba |
 | Música | Efe Eme, Ruta 66 (sin nada de reguetón) |
 | UD Las Palmas y fútbol | Web de la UD Las Palmas, Europa Press Deportes y el fútbol de las demás fuentes; la UD siempre arriba |
 
-Desactivadas (siguen en `fuentes.json` con una nota de por qué): Servimedia (RSS abandonado en 2022), CSIC, Historia National Geographic y Cueva Pintada de Gáldar (bloquean las lecturas automáticas), Popular 1 y Europa Press Ciencia. Si algún día vuelven a funcionar, basta con quitar `"activa": false`.
+Desactivadas (siguen en `fuentes.json` con una nota de por qué): Servimedia (RSS abandonado en 2022), CSIC, Historia National Geographic y Cueva Pintada de Gáldar (bloquean las lecturas automáticas), Popular 1, Europa Press Ciencia, Vinos de Canarias (certificado de seguridad mal puesto) y Sobremesa (sin RSS). Si algún día vuelven a funcionar, basta con quitar `"activa": false`.
 
 Cómo se leen las que no tienen RSS: EFE y Televisión Canaria con la API de WordPress (`wp:` en `fuentes.json`), RTVE con su API en JSON, y El Museo Canario completando su certificado de seguridad incompleto (igual que hacen los navegadores).
 
