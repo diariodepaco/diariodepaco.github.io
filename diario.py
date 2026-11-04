@@ -936,6 +936,9 @@ def generar_web(config, secciones, estados, descartes, tiempo, salida):
               "<p><b>Para tenerlo como aplicación:</b> abre esta página en Chrome y toca «Instalar El Diario en esta "
               "tablet» (o, en el menú ⋮ de Chrome, «Instalar aplicación» o «Añadir a pantalla de inicio»). Queda un icono "
               "como el de cualquier otra aplicación, se abre a pantalla completa y guarda la última edición para leerla sin internet.</p>",
+              "<p><b>Sin avisos de cookies:</b> las webs de los periódicos piden aceptar cookies. Si se usa el navegador "
+              "<b>Brave</b> (gratis, en la Play Store), esos avisos y los anuncios desaparecen solos. Basta con abrir este "
+              "diario en Brave y, en su menú ⋮, tocar «Añadir a pantalla de inicio».</p>",
               "<p>Los medios se han elegido así: agencias de noticias, medios públicos, medios financiados por sus "
               "lectores, divulgación científica hecha por científicos y revistas especializadas.</p>", "</div>"]
     for s in config["secciones"]:

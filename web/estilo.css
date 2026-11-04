@@ -45,6 +45,8 @@ a { color: inherit; }
 .instalar { max-width: 828px; margin: 12px 16px 0; padding: 12px 14px; background: #fff; border: 2px solid var(--azul);
   border-radius: 12px; text-align: center; font-family: 'Poppins', Arial, sans-serif; font-size: 14px; color: var(--suave); }
 .instalar[hidden] { display: none; }
+.instalar b { color: var(--tinta); }
+.instalar a { color: var(--azul); font-weight: 700; margin-left: 6px; }
 .instalar button { display: block; width: 100%; margin: 0 0 6px; padding: 12px; border: 0; border-radius: 10px;
   background: var(--azul); color: #fff; font-family: 'Poppins', Arial, sans-serif; font-weight: 700; font-size: 17px; }
 .aviso { max-width: 828px; margin: 12px 16px 0; padding: 10px 14px; background: #fff4d9; border: 1px solid var(--ambar);

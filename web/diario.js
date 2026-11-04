@@ -65,7 +65,23 @@
     var caja = document.getElementById('instalar');
     if (caja) caja.hidden = true;
   });
+  // En Brave no sale el aviso de instalar de Chrome: se explica cómo añadir el icono (y se puede cerrar)
+  function cerrado() { try { return localStorage.getItem('diario_sin_aviso') === '1'; } catch (x) { return false; } }
+  if (!instalada && navigator.brave && !cerrado()) {
+    var caja = document.getElementById('instalar');
+    if (caja) {
+      caja.innerHTML = '<b>Para tenerlo como aplicación:</b> toca el menú <b>⋮</b> (abajo o arriba a la derecha) y luego ' +
+        '<b>«Añadir a pantalla de inicio»</b>. <a href="#" id="cerrar-aviso">Ya está</a>';
+      caja.hidden = false;
+    }
+  }
   document.addEventListener('click', function (e) {
+    if (e.target && e.target.id === 'cerrar-aviso') {
+      e.preventDefault();
+      try { localStorage.setItem('diario_sin_aviso', '1'); } catch (x) {}
+      document.getElementById('instalar').hidden = true;
+      return;
+    }
     if (!e.target || e.target.id !== 'btn-instalar' || !pendiente) return;
     pendiente.prompt();
     pendiente.userChoice.then(function () { pendiente = null; document.getElementById('instalar').hidden = true; });
