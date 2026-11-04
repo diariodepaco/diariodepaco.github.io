@@ -33,7 +33,7 @@
     window.scrollTo(0, 0);
   }
   function abrir(lista) {
-    var id = (location.hash || '').slice(1), n = lista[id];
+    var id = (location.hash || '').slice(1), n = id.charAt(0) === '_' ? null : lista[id];
     if (!n) { mensaje('Esta noticia ya no está en el Diario (solo se guardan las de los últimos días).'); return; }
     pintar(n);
   }

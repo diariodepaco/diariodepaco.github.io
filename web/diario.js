@@ -105,6 +105,42 @@
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', ponerFotos); else ponerFotos();
 
+  // Botón ↻: trae la última edición y, si hace rato que no se actualiza, le pide a GitHub una edición nueva
+  function avisar(html) {
+    var aviso = document.getElementById('aviso');
+    if (aviso) { aviso.innerHTML = html; aviso.hidden = false; window.scrollTo(0, 0); }
+  }
+  function esperarEdicionNueva(antes, inicio) {
+    fetch('index.html?_=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.text(); }).then(function (t) {
+      var m2 = /data-gen="(\d+)"/.exec(t);
+      if (m2 && +m2[1] > antes) { avisar('¡Ya están las noticias nuevas!'); setTimeout(function () { location.reload(); }, 800); return; }
+      if (Date.now() - inicio > 8 * 60000) { location.reload(); return; }
+      setTimeout(function () { esperarEdicionNueva(antes, inicio); }, 20000);
+    }).catch(function () { setTimeout(function () { esperarEdicionNueva(antes, inicio); }, 20000); });
+  }
+  document.addEventListener('click', function (e) {
+    var b = e.target && e.target.closest ? e.target.closest('#actualizar') : null;
+    if (!b) return;
+    var gen = +document.body.getAttribute('data-gen') || 0, ahora = Date.now() / 1000, ultima = 0;
+    try { ultima = +localStorage.getItem('diario_pedida') || 0; } catch (x) {}
+    if (!clave() || ahora - gen < 15 * 60 || ahora - ultima < 10 * 60) return;  // recién hecha: basta con recargar
+    e.preventDefault();
+    window.diarioLecturas().then(function (lista) {
+      var a = lista._actualizar;
+      if (!a || !a.t) { location.reload(); return; }
+      return fetch('https://api.github.com/repos/' + a.r + '/actions/workflows/' + a.w + '/dispatches', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + a.t, 'Accept': 'application/vnd.github+json' },
+        body: JSON.stringify({ ref: 'main' })
+      }).then(function (r) {
+        if (!r.ok) throw new Error('GitHub ' + r.status);
+        try { localStorage.setItem('diario_pedida', String(Math.floor(Date.now() / 1000))); } catch (x) {}
+        avisar('Buscando noticias nuevas… tarda unos tres minutos. Puedes seguir leyendo: la página se pondrá al día sola.');
+        esperarEdicionNueva(gen, Date.now());
+      });
+    }).catch(function () { location.reload(); });
+  });
+
   // Botón de volver arriba: solo cuando ya se ha bajado un buen trozo
   var subir = document.getElementById('subir'), mirando = false;
   function botonSubir() {

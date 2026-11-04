@@ -918,7 +918,7 @@ SAL_LECTURAS = [""]  # identifica la edición de lecturas.json (para no descarga
 def pagina(titulo, activo, cuerpo, config, extra_cab="", script_extra=""):
     hoy = local_dt(AHORA)
     nav = ['<a href="index.html"%s>Portada</a>' % (' aria-current="page"' if activo == "index" else "")]
-    recargar = '<a href="%s.html" class="recargar" title="Actualizar">↻</a>' % ("index" if activo == "leer" else activo)
+    recargar = '<a href="%s.html" class="recargar" id="actualizar" title="Actualizar">↻</a>' % ("index" if activo == "leer" else activo)
     for s in config["secciones"]:
         nav.append('<a href="%s.html"%s>%s</a>' % (s["id"], ' aria-current="page"' if activo == s["id"] else "",
                                                    esc(s.get("corto", s["nombre"]))))
@@ -933,7 +933,7 @@ def pagina(titulo, activo, cuerpo, config, extra_cab="", script_extra=""):
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <meta name="referrer" content="no-referrer">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data: https:; style-src 'self'; script-src 'self'; connect-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data: https:; style-src 'self'; script-src 'self'; connect-src 'self' https://api.github.com; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="theme-color" content="#1f3a5f">
 <title>%(titulo)s</title>
 <link rel="icon" href="icono.png">
@@ -1195,6 +1195,12 @@ def preparar_lecturas(config, secciones, sin_red=False):
     datos = {lectura.id_de(n["u"]): {"t": n["t"], "f": n["f"], "u": n["u"], "s": nombres.get(n["s"], ""),
                                      "d": n["d"].isoformat() if n["d"] else None, "h": n["leer"], "i": n.get("i", ""),
                                      "o": [[f, u] for f, u in n["tambien"][:4]]} for n in con_texto}
+    token = os.environ.get("ACTUALIZAR_TOKEN", "").strip()
+    if token:
+        # para el botón «Actualizar ahora» (solo lo pueden usar los aparatos con la llave)
+        datos["_actualizar"] = {"t": token, "r": os.environ.get("GITHUB_REPOSITORY", "diariodepaco/diariodepaco.github.io"),
+                                "w": "publicar.yml"}
+        print("  Botón «Actualizar ahora»: activado")
     return lectura.cifrar(json.dumps(datos, ensure_ascii=False, separators=(",", ":")).encode("utf-8"), clave)
 
 

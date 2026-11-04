@@ -4,7 +4,7 @@ name: Diario de Paco
 
 on:
   schedule:
-    - cron: "23 1-23/2 * * *"   # cada dos horas (horas impares, a y 23; hora UTC, en Canarias la misma en invierno)
+    - cron: "*/10 * * * *"   # PRUEBA: cada 10 minutos para comprobar que GitHub lanza el horario (luego, cada dos horas)
   workflow_dispatch:
   push:
     branches: [main]
@@ -46,6 +46,7 @@ jobs:
       - name: Generar el diario
         env:
           CLAVE_DIARIO: ${{ secrets.CLAVE_DIARIO }}
+          ACTUALIZAR_TOKEN: ${{ secrets.ACTUALIZAR_TOKEN }}
         run: python diario.py --out _site
 
       - uses: actions/configure-pages@v6
