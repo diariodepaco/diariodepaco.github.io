@@ -21,6 +21,7 @@ No hace falta ningún servidor ni pagar nada, y Paco no necesita a Claude para n
 | Mundo | EFE, Europa Press, BBC News Mundo, France 24, DW |
 | Ciencia y espacio | Agencia SINC, Instituto de Astrofísica de Canarias, Eureka (Daniel Marín), Naukas, The Conversation |
 | Historia y arqueología | La Brújula Verde, Desperta Ferro, El Museo Canario, The Conversation |
+| La Bodega: vino y buena mesa | EFE Agro (solo vino, quesos, mieles, frutas y gastronomía), Vinos de Canarias, La Prensa del Rioja, Vinetur, Sobremesa |
 | Música | Efe Eme, Ruta 66 (sin nada de reguetón) |
 | UD Las Palmas y fútbol | Web de la UD Las Palmas, Europa Press Deportes y el fútbol de las demás fuentes; la UD siempre arriba |
 

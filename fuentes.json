@@ -7,6 +7,7 @@
     {"id": "mundo", "nombre": "Mundo", "corto": "Mundo", "horas": 30, "max": 25, "portada": 5},
     {"id": "ciencia", "nombre": "Ciencia y espacio", "corto": "Ciencia", "horas": 120, "max": 22, "portada": 5},
     {"id": "historia", "nombre": "Historia y arqueología", "corto": "Historia", "horas": 336, "max": 18, "portada": 4},
+    {"id": "bodega", "nombre": "La Bodega: vino y buena mesa", "corto": "Bodega", "horas": 168, "max": 15, "portada": 4},
     {"id": "musica", "nombre": "Música", "corto": "Música", "horas": 336, "max": 15, "portada": 4},
     {"id": "futbol", "nombre": "UD Las Palmas y fútbol", "corto": "Fútbol", "horas": 48, "max": 15, "portada": 4}
   ],
@@ -80,6 +81,17 @@
      "feeds": ["wp:https://www.udlaspalmas.es", "https://www.udlaspalmas.es/feed/"], "home": "https://www.udlaspalmas.es/"},
     {"nombre": "Europa Press Deportes", "tipo": "Agencia de noticias, sección de deportes (solo fútbol)", "seccion": "futbol", "max": 8, "titulo_canal": "deporte|futbol",
      "feeds": [], "home": "https://www.europapress.es/deportes/"},
+
+    {"nombre": "EFE Agro", "tipo": "Agencia EFE, sección de agricultura y alimentación", "seccion": "bodega", "max": 6, "exigir": "vino|vinos|vinic\\w*|vitivinic\\w*|bodega\\w*|vendimia\\w*|vinedo\\w*|uva|uvas|rioja|denominacion\\w* de origen|queso\\w*|miel|mieles|apicult\\w*|platano\\w*|aguacate\\w*|mango\\w*|papaya\\w*|fruta\\w*|gastronom\\w*|enolog\\w*|sumiller\\w*|cata|catas|cava|tinto\\w*|malvasia|listan|albarino|tempranillo|garnacha|verdejo|aceite de oliva|cocina|cocinero\\w*|chef\\w*|restaurante\\w*|receta\\w*",
+     "feeds": ["wp:https://efeagro.com", "https://efeagro.com/feed/"], "home": "https://efeagro.com/"},
+    {"nombre": "Vinos de Canarias", "tipo": "Denominación de Origen Islas Canarias", "seccion": "bodega", "max": 4,
+     "feeds": ["wp:https://www.vinosdecanarias.es", "https://www.vinosdecanarias.es/feed/"], "home": "https://www.vinosdecanarias.es/"},
+    {"nombre": "La Prensa del Rioja", "tipo": "Periódico especializado en el vino de Rioja", "seccion": "bodega", "max": 4,
+     "feeds": ["https://www.laprensadelrioja.com/feed/", "wp:https://www.laprensadelrioja.com"], "home": "https://www.laprensadelrioja.com/"},
+    {"nombre": "Vinetur", "tipo": "Revista especializada en vino", "seccion": "bodega", "max": 4,
+     "feeds": ["https://www.vinetur.com/feed/", "https://www.vinetur.com/rss/"], "home": "https://www.vinetur.com/"},
+    {"nombre": "Sobremesa", "tipo": "Revista de vino y gastronomía", "seccion": "bodega", "max": 4,
+     "feeds": ["https://www.sobremesa.es/feed/", "wp:https://www.sobremesa.es"], "home": "https://www.sobremesa.es/"},
 
     {"nombre": "Efe Eme", "tipo": "Revista de música", "seccion": "musica", "max": 6,
      "feeds": ["https://www.efeeme.com/feed/"], "home": "https://www.efeeme.com/"},
