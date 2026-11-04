@@ -871,6 +871,7 @@ def generar_web(config, secciones, estados, descartes, tiempo, salida):
         for nombre in os.listdir(carpeta_app):
             if nombre.endswith(".apk"):
                 shutil.copy(os.path.join(carpeta_app, nombre), os.path.join(salida, nombre))
+                print("App publicada: %s (%d bytes)" % (nombre, os.path.getsize(os.path.join(salida, nombre))))
     escribir(os.path.join(salida, "robots.txt"), "User-agent: *\nDisallow: /\n")
     escribir(os.path.join(salida, ".nojekyll"), "")
     cab = tiempo_html(tiempo)
