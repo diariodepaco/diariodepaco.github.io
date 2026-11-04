@@ -29,7 +29,7 @@
      "feeds": ["https://www.europapress.es/rss/rss.aspx?ch=00066"], "home": "https://www.europapress.es/nacional/"},
     {"nombre": "elDiario.es", "tipo": "Periódico financiado por sus socios", "seccion": "espana", "max": 10, "unir": true,
      "feeds": ["https://www.eldiario.es/rss/politica/", "https://www.eldiario.es/rss/sociedad/", "https://www.eldiario.es/rss/economia/"], "home": "https://www.eldiario.es/"},
-    {"nombre": "Servimedia", "tipo": "Agencia de noticias de la Fundación ONCE", "seccion": "espana", "max": 6,
+    {"nombre": "Servimedia", "activa": false, "_nota": "Su canal RSS no se actualiza desde 2022", "tipo": "Agencia de noticias de la Fundación ONCE", "seccion": "espana", "max": 6,
      "feeds": ["https://www.servimedia.es/rss"], "home": "https://www.servimedia.es/"},
     {"nombre": "Civio", "tipo": "Fundación de periodismo de datos, sin ánimo de lucro", "seccion": "espana", "max": 3,
      "feeds": ["https://civio.es/feed/"], "home": "https://civio.es/"},

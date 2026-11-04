@@ -17,13 +17,13 @@ No hace falta ningún servidor ni pagar nada, y Paco no necesita a Claude para n
 | Sección | Fuentes |
 |---|---|
 | Gran Canaria y Canarias | Canarias Ahora, Europa Press Canarias |
-| España | Europa Press, elDiario.es, Servimedia, Civio, Maldita.es |
+| España | Europa Press, elDiario.es, Civio, Maldita.es |
 | Mundo | Europa Press, BBC News Mundo, France 24, DW |
 | Ciencia y espacio | Agencia SINC, Instituto de Astrofísica de Canarias, Eureka (Daniel Marín), Naukas, The Conversation |
 | Historia y arqueología | La Brújula Verde, Desperta Ferro, The Conversation |
 | Música | Efe Eme, Ruta 66 |
 
-Desactivadas (siguen en `fuentes.json` con una nota de por qué): EFE y Televisión Canaria (sus canales RSS no funcionan), RTVE (dejó de actualizarlos en 2022), Infonorte Digital, CSIC, Historia National Geographic, El Museo Canario, Cueva Pintada de Gáldar, Popular 1 y Europa Press Ciencia. Si algún día vuelven a funcionar, basta con quitar `"activa": false`.
+Desactivadas (siguen en `fuentes.json` con una nota de por qué): EFE y Televisión Canaria (sus canales RSS no funcionan), RTVE y Servimedia (dejaron de actualizarlos en 2022), Infonorte Digital, CSIC, Historia National Geographic, El Museo Canario, Cueva Pintada de Gáldar, Popular 1 y Europa Press Ciencia. Si algún día vuelven a funcionar, basta con quitar `"activa": false`.
 
 Criterio: agencias de noticias, medios públicos, medios financiados por sus lectores, divulgación científica hecha por científicos y revistas especializadas. Los grandes diarios comerciales quedan fuera por los titulares cebo.
 
@@ -45,6 +45,8 @@ Los filtros (palabras de cebo, deporte, opinión…) están al principio de `dia
 El repositorio tiene que ser **público** para que GitHub Pages sea gratis. No contiene nada privado.
 
 ## La app de la tablet
+
+Se descarga desde **https://ansertoken.github.io/diario-paco/diario.apk** (es el archivo `app/diario.apk` de este repositorio).
 
 `El Diario de Paco` (APK aparte, no va dentro de Crucigramas) abre esta web a pantalla completa, guarda la última edición para leerla sin conexión, y abre las noticias en **modo lectura**: sin JavaScript, sin cookies y bloqueando rastreadores, así que no salen avisos de cookies ni anuncios. Tiene botones para agrandar la letra, volver al diario y abrir la noticia en el navegador si alguna no se ve bien.
 
