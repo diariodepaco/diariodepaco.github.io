@@ -348,6 +348,7 @@ def cargar_fuente(f, muestras=None):
                     if re.search(r"(?i)(rss|feed|atom|\.xml)", h) and h not in probados and h not in enlaces and \
                             not re.search(r"(?i)comment|feedly|feedburner\.google|/add\?|subscribe|netvibes|inoreader", h):
                         enlaces.append(h)
+                estado["canales_en_pagina"] = enlaces[:30]
                 for h in enlaces[:6]:
                     sub = probar(h, 1)
                     if sub:
@@ -780,6 +781,8 @@ def main():
         if not e["ok"]:
             for err in e["errores"]:
                 print("      · " + err[:200])
+        for c in e.get("canales_en_pagina", []):
+            print("      canal visto: " + c)
     secciones, descartes = preparar(config, resultados)
     print("Titulares descartados:")
     for d in sorted(descartes, key=lambda d: (d["motivo"], d["fuente"])):
