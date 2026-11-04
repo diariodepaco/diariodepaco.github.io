@@ -9,7 +9,7 @@ Solo usa la biblioteca estándar de Python (3.9 o superior).
 Qué hace en cada ejecución:
  1. Lee las fuentes de fuentes.json. Para cada una prueba sus canales RSS y, si ninguno funciona,
     busca el canal en la portada del medio (autodescubrimiento).
- 2. Descarta titulares cebo, publicidad, deporte, opinión, directos y noticias repetidas.
+ 2. Descarta titulares cebo, publicidad, opinión, directos, otros idiomas y repetidas; el fútbol va a su sección.
  3. Ordena por secciones y escribe páginas HTML estáticas (sin anuncios, sin cookies, sin rastreo)
     y un informe técnico (estado.html / estado.json) para ver qué fuentes fallan.
 """
@@ -24,7 +24,7 @@ except Exception:  # pragma: no cover - sin base de zonas horarias
     TZ = dt.timezone.utc
 
 AQUI = os.path.dirname(os.path.abspath(__file__))
-SITIO = "https://ansertoken.github.io/diario-paco/"
+SITIO = "https://diariodepaco.github.io/"
 UA = "Mozilla/5.0 (compatible; DiarioDePaco/1.0; lector RSS personal; +%s)" % SITIO
 AHORA = dt.datetime.now(dt.timezone.utc)
 
