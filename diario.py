@@ -823,6 +823,16 @@ def main():
     tiempo = None if a.muestras is not None or not config.get("tiempo") else el_tiempo(config["tiempo"])
     estados = [e for _, _, e in resultados]
     generar_web(config, secciones, estados, descartes, tiempo, a.out)
+    print("Resumen por fuente (válidas tras filtros · publicadas · descartadas):")
+    publicadas = {}
+    for sec in secciones.values():
+        for n in sec["notas"]:
+            publicadas[n["f"]] = publicadas.get(n["f"], 0) + 1
+    for f, notas, e in resultados:
+        fechas = sorted(n["d"] for n in notas if n.get("d"))
+        print("  %-38s %3d · %3d · %s · fechas %s → %s" % (f["nombre"][:38], e.get("validas", 0), publicadas.get(f["nombre"], 0),
+              e.get("descartadas", {}), fechas[0].strftime("%d/%m %H:%M") if fechas else "-",
+              fechas[-1].strftime("%d/%m %H:%M") if fechas else "-"))
     print("Titulares publicados:")
     for s in config["secciones"]:
         print("  == " + s["nombre"])
