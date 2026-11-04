@@ -43,7 +43,7 @@
   function clave() { try { return localStorage.getItem('diario_clave'); } catch (x) { return null; } }
   document.addEventListener('click', function (e) {
     var a = e.target && e.target.closest ? e.target.closest('a[data-leer]') : null;
-    if (!a || !clave() || !window.crypto || !window.crypto.subtle) return;
+    if (!a) return;
     e.preventDefault();
     location.href = 'leer.html#' + a.getAttribute('data-leer');
   });

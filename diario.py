@@ -799,13 +799,12 @@ def nota_html(n, resumen=True, mostrar_seccion=None):
         meta.append('<span class="de">%s</span>' % esc(mostrar_seccion))
     sello = '<span class="sello">Gáldar</span>' if n["galdar"] else ""
     partes = ['<article class="nota">', '<div class="meta">%s%s</div>' % (" · ".join(meta), sello),
-              '<h3><a href="%s" rel="noopener noreferrer"%s>%s</a></h3>' % (
-                  esc(n["u"]), (' data-leer="%s"' % lectura.id_de(n["u"])) if n.get("leer") else "", esc(n["t"]))]
+              ('<h3><a href="leer.html#%s" data-leer="%s">%s</a></h3>' % (lectura.id_de(n["u"]), lectura.id_de(n["u"]), esc(n["t"]))
+               if n.get("leer") else '<h3><a href="%s" rel="noopener noreferrer">%s</a></h3>' % (esc(n["u"]), esc(n["t"])))]
     if resumen and n["r"]:
         partes.append("<p>%s</p>" % esc(n["r"]))
     if n["tambien"]:
-        partes.append('<div class="tambien">También lo cuentan: %s</div>' % ", ".join(
-            '<a href="%s" rel="noopener noreferrer">%s</a>' % (esc(u), esc(f)) for f, u in n["tambien"][:4]))
+        partes.append('<div class="tambien">También lo cuentan: %s</div>' % esc(", ".join(f for f, _ in n["tambien"][:4])))
     partes.append("</article>")
     return "\n".join(partes)
 
@@ -937,19 +936,15 @@ def generar_web(config, secciones, estados, descartes, tiempo, salida, paquete=N
     cuerpo = ['<h2 class="titulo-seccion">De dónde salen las noticias</h2>',
               '<div class="texto">',
               "<p>Cada dos horas, un programa automático recoge los titulares que publican los medios de esta lista. "
-              "Quita los titulares cebo, la publicidad, el deporte, los artículos de opinión y las noticias repetidas, "
+              "Quita los titulares cebo, la publicidad, los artículos de opinión, las noticias repetidas y el deporte (salvo el fútbol, que va en su sección), "
               "y ordena el resto por secciones. Cuando varios medios cuentan lo mismo, se muestra una sola vez "
               "y debajo pone quién más lo cuenta.</p>",
-              "<p>Al tocar una noticia se lee aquí mismo, solo el texto: sin anuncios ni avisos de cookies (abajo de cada "
-              "noticia hay un enlace a la web del medio). Si de alguna no se ha podido sacar el texto, se abre en la web "
-              "del medio. Esta página no tiene anuncios, "
+              "<p>Al tocar una noticia se lee aquí mismo, solo el texto: ninguna noticia se abre fuera del Diario, así que "
+              "no hay anuncios ni avisos de cookies. Esta página no tiene anuncios, "
               "no usa cookies y no guarda nada de quien la lee.</p>",
               "<p><b>Para tenerlo como aplicación:</b> abre esta página en Chrome y toca «Instalar El Diario en esta "
               "tablet» (o, en el menú ⋮ de Chrome, «Instalar aplicación» o «Añadir a pantalla de inicio»). Queda un icono "
               "como el de cualquier otra aplicación, se abre a pantalla completa y guarda la última edición para leerla sin internet.</p>",
-              "<p><b>Sin avisos de cookies:</b> las webs de los periódicos piden aceptar cookies. Si se usa el navegador "
-              "<b>Brave</b> (gratis, en la Play Store), esos avisos y los anuncios desaparecen solos. Basta con abrir este "
-              "diario en Brave y, en su menú ⋮, tocar «Añadir a pantalla de inicio».</p>",
               "<p>Los medios se han elegido así: agencias de noticias, medios públicos, medios financiados por sus "
               "lectores, divulgación científica hecha por científicos y revistas especializadas.</p>", "</div>"]
     for s in config["secciones"]:
@@ -967,7 +962,7 @@ def generar_web(config, secciones, estados, descartes, tiempo, salida, paquete=N
                 "%d noticia%s ahora" % (cuantas, "" if cuantas == 1 else "s")))
         cuerpo.append("</ul>")
     cuerpo.append('<p class="tecnico"><a href="estado.html">Informe técnico</a> · El tiempo: '
-                  '<a href="https://open-meteo.com/" rel="noopener noreferrer">Open-Meteo</a></p>')
+                  'datos de Open-Meteo (open-meteo.com)</p>')
     escribir(os.path.join(salida, "fuentes.html"), pagina("Fuentes · El Diario de Paco", "fuentes", "\n".join(cuerpo), config, cab))
     escribir(os.path.join(salida, "leer.html"), pagina(
         "Noticia · El Diario de Paco", "leer",
@@ -1029,7 +1024,7 @@ def preparar_lecturas(config, secciones, sin_red=False):
         if letras >= 600:
             n["leer"] = h
         elif n["u"] in cache:
-            if cache[n["u"]]["n"] >= 600:
+            if cache[n["u"]]["n"] >= 400:
                 n["leer"] = lectura.limpiar_html(cache[n["u"]]["h"])[0]  # se vuelve a limpiar con las reglas actuales
         elif not sin_red:
             pendientes.append(n)
@@ -1043,8 +1038,8 @@ def preparar_lecturas(config, secciones, sin_red=False):
         return n, h, letras
     with concurrent.futures.ThreadPoolExecutor(max_workers=6) as ex:
         for n, h, letras in ex.map(de_la_pagina, pendientes):
-            cache[n["u"]] = {"h": h if letras >= 600 else "", "n": letras, "t": AHORA.timestamp()}
-            if letras >= 600:
+            cache[n["u"]] = {"h": h if letras >= 400 else "", "n": letras, "t": AHORA.timestamp()}
+            if letras >= 400:
                 n["leer"] = h
     os.makedirs(os.path.dirname(CACHE_TEXTOS), exist_ok=True)
     json.dump(cache, open(CACHE_TEXTOS, "w", encoding="utf-8"), ensure_ascii=False)
@@ -1054,6 +1049,9 @@ def preparar_lecturas(config, secciones, sin_red=False):
             primero = re.match(r"<p>(.*?)</p>\n?", n["leer"], flags=re.S)
             if primero and sin_tildes(re.sub(r"<[^>]+>", "", primero.group(1))).strip(" .") == sin_tildes(n["t"]).strip(" ."):
                 n["leer"] = n["leer"][primero.end():]
+    for n in notas:
+        if n.get("leer"):
+            n["leer"] = re.sub(r"(?s)<a\b[^>]*>(.*?)</a>", r"\1", n["leer"])
     con_texto = [n for n in notas if n.get("leer")]
     por_fuente = {}
     for n in notas:
@@ -1075,6 +1073,13 @@ def preparar_lecturas(config, secciones, sin_red=False):
             print("  [%s] %d párrafos | 1º: %s | último: %s" % (n["f"], len(parrafos), parrafos[0][:90] if parrafos else "",
                                                             parrafos[-1][:90] if parrafos else ""))
     clave = os.environ.get("CLAVE_DIARIO", "").strip()
+    if clave:
+        quitadas = 0
+        for sec in secciones.values():
+            antes = len(sec["notas"])
+            sec["notas"] = [n for n in sec["notas"] if n.get("leer")]
+            quitadas += antes - len(sec["notas"])
+        print("  Se quitan %d noticias que no se pueden leer dentro (nada se abre fuera del Diario)" % quitadas)
     if not clave:
         print("  (sin CLAVE_DIARIO: las noticias se abren en la web de cada medio)")
         for n in notas:

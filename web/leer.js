@@ -13,16 +13,14 @@
   }
   function pintar(n) {
     document.title = n.t + ' · El Diario de Paco';
-    var otros = (n.o || []).map(function (x) {
-      return '<a href="' + esc(x[1]) + '" rel="noopener noreferrer">' + esc(x[0]) + '</a>';
-    }).join(', ');
+    var otros = esc((n.o || []).map(function (x) { return x[0]; }).join(', '));
     caja.innerHTML =
       '<a class="volver" href="index.html" id="volver">‹ Volver</a>' +
       '<div class="meta"><span class="medio">' + esc(n.f) + '</span>' + (n.d ? ' · ' + esc(fecha(n.d)) : '') +
       (n.s ? ' · ' + esc(n.s) : '') + '</div>' +
       '<h1>' + esc(n.t) + '</h1>' +
       '<div class="cuerpo">' + n.h + '</div>' +
-      '<div class="origen">Noticia de <b>' + esc(n.f) + '</b>. <a href="' + esc(n.u) + '" rel="noopener noreferrer">Verla en su web</a>' +
+      '<div class="origen">Noticia de <b>' + esc(n.f) + '</b>' + (n.d ? ', publicada el ' + esc(fecha(n.d)) : '') + '.' +
       (otros ? '<br>También lo cuentan: ' + otros : '') + '</div>' +
       '<a class="mas" href="index.html" id="volver2">‹ Volver al Diario</a>';
     var volver = function (e) {
@@ -38,7 +36,7 @@
     pintar(n);
   }
   var k = clave();
-  if (!k || !window.crypto || !crypto.subtle) { mensaje('Este dispositivo no tiene la clave para leer las noticias aquí dentro.'); return; }
+  if (!k || !window.crypto || !crypto.subtle) { mensaje('Este aparato todavía no tiene la llave para leer las noticias. Escanea otra vez el código QR del Diario y listo.'); return; }
   fetch('lecturas.json', { cache: 'no-cache' }).then(function (r) { return r.json(); }).then(function (p) {
     var guardado = null;
     try { guardado = JSON.parse(sessionStorage.getItem('diario_lecturas') || 'null'); } catch (x) {}

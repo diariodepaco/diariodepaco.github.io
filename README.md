@@ -50,9 +50,9 @@ El repositorio tiene que ser **público** para que GitHub Pages sea gratis. No c
 
 ## Leer las noticias dentro del Diario (sin cookies)
 
-Al tocar un titular, la noticia se lee **dentro del Diario**: solo el texto, sin anuncios ni avisos de cookies, con un enlace a la web del medio al final. El texto sale del propio canal del medio (RSS completo, API de WordPress o de RTVE) o, si el canal solo trae un resumen, de la página de la noticia (`lectura.py`).
+Al tocar un titular, la noticia se lee **dentro del Diario**: solo el texto, sin anuncios ni avisos de cookies. **Nada se abre fuera**: las noticias de las que no se consigue el texto no se publican, y dentro de los textos no hay enlaces a otras webs. El texto sale del propio canal del medio (RSS completo, API de WordPress o de RTVE) o, si el canal solo trae un resumen, de la página de la noticia (`lectura.py`).
 
-Esos textos se publican **cifrados** con una clave familiar (secreto `CLAVE_DIARIO` en *Settings › Secrets and variables › Actions*): la web es pública, pero solo los dispositivos que han abierto el enlace con la clave (el del QR, `https://diariodepaco.github.io/#clave=…`) pueden leerlos. Para cualquier otra persona, el Diario solo muestra titulares y enlaza a cada medio. No hay archivo: cada edición lleva solo las noticias de esos días y luego desaparecen. Sin el secreto, todo funciona igual pero las noticias se abren en la web de cada medio.
+Esos textos se publican **cifrados** con una clave familiar (secreto `CLAVE_DIARIO` en *Settings › Secrets and variables › Actions*): la web es pública, pero solo los dispositivos que han abierto el enlace con la clave (el del QR, `https://diariodepaco.github.io/#clave=…`) pueden leerlos. Para cualquier otra persona, el Diario solo muestra titulares. No hay archivo: cada edición lleva solo las noticias de esos días y luego desaparecen. Sin el secreto, todo funciona igual pero las noticias se abren en la web de cada medio.
 
 ## La «app» de la tablet
 
