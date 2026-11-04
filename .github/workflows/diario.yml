@@ -1,0 +1,63 @@
+# Genera El Diario de Paco cada dos horas y lo publica en GitHub Pages.
+# También se puede lanzar a mano: pestaña Actions › Diario de Paco › Run workflow.
+name: Diario de Paco
+
+on:
+  schedule:
+    - cron: "17 */2 * * *"   # cada dos horas (hora UTC; en Canarias es la misma en invierno)
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write   # solo para el "mantener vivo" de abajo
+  pages: write
+  id-token: write
+  actions: write
+
+concurrency:
+  group: diario
+  cancel-in-progress: true
+
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment:
+      name: github-pages
+      url: ${{ steps.despliegue.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      - name: Generar el diario
+        run: python diario.py --out _site
+
+      - uses: actions/configure-pages@v6
+
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: _site
+
+      - name: Publicar
+        id: despliegue
+        uses: actions/deploy-pages@v5
+
+      # GitHub apaga las tareas programadas de un repositorio sin actividad en 60 días.
+      # Esto lo evita: reactiva el horario y, si hace más de 50 días del último cambio, deja un cambio vacío.
+      - name: Mantener vivo el horario automático
+        if: github.event_name == 'schedule'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api -X PUT "repos/${{ github.repository }}/actions/workflows/diario.yml/enable" || true
+          ultimo=$(git log -1 --format=%ct)
+          if [ $(( $(date +%s) - ultimo )) -gt $(( 50 * 86400 )) ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git commit --allow-empty -m "Mantener activo el horario automático"
+            git push || true
+          fi

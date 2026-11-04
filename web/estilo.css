@@ -1,0 +1,108 @@
+/* El Diario de Paco: papel claro, letra grande, sin nada que distraiga */
+@font-face { font-family: 'Lora'; src: url('fonts/Lora-Regular.ttf') format('truetype'); font-weight: 400; font-display: swap; }
+@font-face { font-family: 'Lora'; src: url('fonts/Lora-SemiBold.ttf') format('truetype'); font-weight: 600; font-display: swap; }
+@font-face { font-family: 'Poppins'; src: url('fonts/Poppins-Medium.ttf') format('truetype'); font-weight: 500; font-display: swap; }
+@font-face { font-family: 'Poppins'; src: url('fonts/Poppins-Bold.ttf') format('truetype'); font-weight: 700; font-display: swap; }
+
+:root {
+  --papel: #faf6ec;
+  --papel2: #f2ecdd;
+  --tinta: #1c2028;
+  --suave: #4a5260;
+  --azul: #1f3a5f;
+  --raya: #ddd3bd;
+  --ambar: #e8a33d;
+  --tierra: #a2491f;
+  color-scheme: light;
+}
+
+* { -webkit-box-sizing: border-box; box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--papel); color: var(--tinta);
+  font-family: 'Lora', Georgia, 'Times New Roman', serif; font-size: 19px; line-height: 1.5;
+}
+a { color: inherit; }
+
+.cab { text-align: center; padding: 18px 16px 12px; border-bottom: 3px double var(--tinta); max-width: 860px; margin: 0 auto; }
+.cab .fecha { font-family: 'Poppins', Arial, sans-serif; font-weight: 500; font-size: 14px; color: var(--suave); letter-spacing: .02em; }
+.cab h1 { font-family: 'Lora', Georgia, serif; font-weight: 600; font-size: 40px; line-height: 1.1; margin: 6px 0 4px; letter-spacing: -.01em; }
+.cab h1 a { text-decoration: none; color: var(--azul); }
+.cab .lema { font-style: italic; font-size: 15px; color: var(--suave); }
+.cumple { display: inline-block; margin-top: 10px; padding: 6px 16px; background: var(--ambar); color: var(--tinta);
+  font-family: 'Poppins', Arial, sans-serif; font-weight: 700; font-size: 17px; border-radius: 999px; }
+.tiempo { margin-top: 10px; font-family: 'Poppins', Arial, sans-serif; font-weight: 500; font-size: 14px; color: var(--suave); }
+.tiempo b { color: var(--tinta); }
+
+.secciones { display: -webkit-box; display: -webkit-flex; display: flex; -webkit-flex-wrap: wrap; flex-wrap: wrap;
+  -webkit-box-pack: center; -webkit-justify-content: center; justify-content: center;
+  max-width: 860px; margin: 0 auto; padding: 10px 10px 6px; border-bottom: 1px solid var(--raya); }
+.secciones a { font-family: 'Poppins', Arial, sans-serif; font-weight: 500; font-size: 16px; text-decoration: none;
+  color: var(--azul); padding: 8px 13px; margin: 3px; border-radius: 999px; border: 1px solid var(--raya); background: #fff; }
+.secciones a[aria-current="page"] { background: var(--azul); border-color: var(--azul); color: #fff; }
+
+.aviso { max-width: 828px; margin: 12px auto 0; padding: 10px 14px; background: #fff4d9; border: 1px solid var(--ambar);
+  border-radius: 10px; font-family: 'Poppins', Arial, sans-serif; font-size: 15px; text-align: center; }
+.aviso[hidden] { display: none; }
+.aviso a { font-weight: 700; color: var(--azul); }
+
+main { max-width: 860px; margin: 0 auto; padding: 4px 16px 24px; }
+.bloque { padding-top: 6px; }
+.bloque h2, .titulo-seccion { font-family: 'Poppins', Arial, sans-serif; font-weight: 700; font-size: 15px; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--azul); margin: 22px 0 2px; padding-bottom: 6px; border-bottom: 2px solid var(--azul); }
+.bloque h2 a { text-decoration: none; }
+.titulo-seccion { font-size: 17px; }
+.galdar { background: var(--papel2); margin: 16px -16px 0; padding: 4px 16px 10px; border-top: 4px solid var(--ambar); }
+.galdar h2 { color: var(--tierra); border-bottom-color: var(--tierra); margin-top: 12px; }
+
+.nota { padding: 14px 0 15px; border-bottom: 1px solid var(--raya); }
+.nota .meta { font-family: 'Poppins', Arial, sans-serif; font-weight: 500; font-size: 13.5px; color: var(--suave); margin-bottom: 3px; }
+.nota .medio { color: var(--azul); font-weight: 700; }
+.nota .sello { display: inline-block; margin-left: 8px; padding: 0 8px; border-radius: 999px; background: var(--ambar);
+  color: var(--tinta); font-weight: 700; font-size: 12.5px; }
+.nota h3 { font-weight: 600; font-size: 1.12em; line-height: 1.3; margin: 0; }
+.nota h3 a { text-decoration: none; }
+.nota h3 a:active, .nota h3 a:focus { text-decoration: underline; }
+.nota p { margin: 6px 0 0; color: var(--suave); font-size: .93em; }
+.nota .tambien { margin-top: 6px; font-family: 'Poppins', Arial, sans-serif; font-size: 13.5px; color: var(--suave); }
+.nota .tambien a { color: var(--azul); }
+.mas { display: block; text-align: center; margin: 12px 0 4px; padding: 11px; border-radius: 10px; background: #fff;
+  border: 1px solid var(--raya); font-family: 'Poppins', Arial, sans-serif; font-weight: 500; font-size: 16px;
+  color: var(--azul); text-decoration: none; }
+.dia { font-family: 'Poppins', Arial, sans-serif; font-weight: 700; font-size: 14px; color: var(--tierra); margin: 22px 0 0;
+  text-transform: uppercase; letter-spacing: .06em; }
+.vacio { color: var(--suave); font-style: italic; }
+
+.texto p { margin: 12px 0; }
+.sub { font-family: 'Poppins', Arial, sans-serif; font-weight: 700; font-size: 16px; color: var(--azul); margin: 24px 0 6px; }
+.fuentes { list-style: none; padding: 0; margin: 0; }
+.fuentes li { padding: 9px 0; border-bottom: 1px solid var(--raya); }
+.fuentes li span { font-size: .85em; color: var(--suave); }
+.nofunciona { color: var(--tierra) !important; font-size: .8em; }
+.tecnico { margin-top: 26px; font-family: 'Poppins', Arial, sans-serif; font-size: 13px; color: var(--suave); }
+
+.tabla { overflow-x: auto; }
+table { border-collapse: collapse; font-family: 'Poppins', Arial, sans-serif; font-size: 12.5px; width: 100%; }
+th, td { text-align: left; vertical-align: top; padding: 6px; border-bottom: 1px solid var(--raya); word-break: break-word; }
+tr.mal td { background: #fbe3d8; }
+tr.err td { font-size: 11.5px; color: var(--tierra); background: #fdf1eb; }
+details { font-family: 'Poppins', Arial, sans-serif; font-size: 13px; margin: 6px 0; }
+summary { cursor: pointer; font-weight: 700; padding: 4px 0; }
+
+.pie { max-width: 860px; margin: 0 auto; padding: 18px 16px 40px; text-align: center; border-top: 3px double var(--tinta);
+  font-family: 'Poppins', Arial, sans-serif; font-size: 14px; color: var(--suave); }
+.pie p { margin: 6px 0; }
+.pie a { color: var(--azul); font-weight: 500; }
+.pie .firma { margin-top: 14px; font-family: 'Lora', Georgia, serif; font-style: italic; }
+
+@media (min-width: 700px) {
+  body { font-size: 21px; }
+  .cab h1 { font-size: 54px; }
+  .cab .fecha, .tiempo { font-size: 15px; }
+  .secciones a { font-size: 17px; }
+  .galdar { margin: 16px 0 0; border-radius: 0 0 12px 12px; }
+}
+@media (max-width: 380px) {
+  .cab h1 { font-size: 34px; }
+  .secciones a { padding: 7px 10px; font-size: 15px; }
+}
