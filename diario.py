@@ -357,6 +357,17 @@ def cargar_fuente(f, muestras=None):
         estado["errores"].append("%s → canal vacío o ilegible" % url)
         return None
 
+    if f.get("unir"):
+        # fuente con varios canales que se suman (p. ej. varias secciones de un mismo medio)
+        todas, canales = [], []
+        for url in intentos:
+            notas = probar(url)
+            if notas:
+                todas += notas
+                canales.append(url)
+        if todas:
+            estado.update(ok=True, canal=" + ".join(canales), leidas=len(todas))
+            return f, todas, estado
     for url in intentos:
         notas = probar(url)
         if notas:

@@ -48,9 +48,9 @@
      "feeds": ["https://rss.dw.com/rdf/rss-sp-all", "https://rss.dw.com/xml/rss-sp-all"], "home": "https://www.dw.com/es/"},
 
     {"nombre": "Agencia SINC", "tipo": "Agencia pública de noticias científicas (FECYT)", "seccion": "ciencia", "max": 6,
-     "feeds": ["https://www.agenciasinc.es/rss"], "home": "https://www.agenciasinc.es/"},
+     "unir": true, "feeds": ["https://www.agenciasinc.es/feed/Ciencia", "https://www.agenciasinc.es/feed/Tierra"], "home": "https://www.agenciasinc.es/"},
     {"nombre": "Instituto de Astrofísica de Canarias", "tipo": "Centro público de investigación astronómica", "seccion": "ciencia", "max": 5,
-     "feeds": ["https://www.iac.es/es/rss.xml"], "home": "https://www.iac.es/es"},
+     "unir": true, "feeds": ["https://www.iac.es/es/feed_news", "https://www.iac.es/es/feed_press_release_news", "https://www.iac.es/es/feed_research_news_iac"], "home": "https://www.iac.es/es"},
     {"nombre": "Eureka (Daniel Marín)", "tipo": "Blog de astronomía y exploración espacial", "seccion": "ciencia", "max": 4,
      "feeds": ["https://danielmarin.naukas.com/feed/"], "home": "https://danielmarin.naukas.com/"},
     {"nombre": "Europa Press Ciencia", "tipo": "Agencia de noticias, sección de ciencia y espacio", "seccion": "ciencia", "max": 5,
