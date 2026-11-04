@@ -16,12 +16,14 @@ No hace falta ningún servidor ni pagar nada, y Paco no necesita a Claude para n
 
 | Sección | Fuentes |
 |---|---|
-| Gran Canaria y Canarias | Televisión Canaria (RTVC), Canarias Ahora, EFE Canarias, Europa Press Canarias, Infonorte Digital |
-| España | EFE, RTVE, Europa Press, elDiario.es, Civio, Maldita.es |
-| Mundo | EFE, RTVE, Europa Press, BBC News Mundo, France 24, DW |
-| Ciencia y espacio | Agencia SINC, Instituto de Astrofísica de Canarias, Eureka (Daniel Marín), Europa Press Ciencia, CSIC, Naukas, The Conversation |
-| Historia y arqueología | La Brújula Verde, Desperta Ferro, Historia National Geographic, El Museo Canario, Cueva Pintada de Gáldar, The Conversation |
-| Música | Efe Eme, Ruta 66, Popular 1 |
+| Gran Canaria y Canarias | Canarias Ahora, Europa Press Canarias |
+| España | Europa Press, elDiario.es, Servimedia, Civio, Maldita.es |
+| Mundo | Europa Press, BBC News Mundo, France 24, DW |
+| Ciencia y espacio | Agencia SINC, Instituto de Astrofísica de Canarias, Eureka (Daniel Marín), Naukas, The Conversation |
+| Historia y arqueología | La Brújula Verde, Desperta Ferro, The Conversation |
+| Música | Efe Eme, Ruta 66 |
+
+Desactivadas (siguen en `fuentes.json` con una nota de por qué): EFE y Televisión Canaria (sus canales RSS no funcionan), RTVE (dejó de actualizarlos en 2022), Infonorte Digital, CSIC, Historia National Geographic, El Museo Canario, Cueva Pintada de Gáldar, Popular 1 y Europa Press Ciencia. Si algún día vuelven a funcionar, basta con quitar `"activa": false`.
 
 Criterio: agencias de noticias, medios públicos, medios financiados por sus lectores, divulgación científica hecha por científicos y revistas especializadas. Los grandes diarios comerciales quedan fuera por los titulares cebo.
 
