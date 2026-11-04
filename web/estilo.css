@@ -142,3 +142,17 @@ summary { cursor: pointer; font-weight: 700; padding: 4px 0; }
 .lectura .origen { margin: 18px 0 8px; padding: 12px 14px; background: var(--papel2); border-radius: 10px;
   font-family: 'Poppins', Arial, sans-serif; font-size: 14.5px; color: var(--suave); line-height: 1.6; }
 .lectura .origen a { color: var(--azul); font-weight: 500; }
+
+/* fotos (solo con la llave; vienen de la web de cada medio, sin abrir nada fuera) */
+.nota::after { content: ""; display: table; clear: both; }
+.nota .miniatura { float: right; margin: 2px 0 6px 12px; width: 96px; height: 72px; border-radius: 8px; overflow: hidden;
+  background: var(--papel2); }
+.nota .miniatura img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.nota .foto-grande { display: block; margin: 0 0 10px; border-radius: 10px; overflow: hidden; background: var(--papel2); }
+.nota .foto-grande img { width: 100%; height: 210px; object-fit: cover; display: block; }
+.lectura .foto { margin: 0 0 16px; }
+.lectura .foto img { width: 100%; max-height: 62vh; object-fit: cover; border-radius: 10px; display: block; background: var(--papel2); }
+@media (min-width: 700px) {
+  .nota .miniatura { width: 150px; height: 100px; }
+  .nota .foto-grande img { height: 340px; }
+}

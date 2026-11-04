@@ -282,6 +282,49 @@ def xml_a_arbol(datos):
         return None
 
 
+FOTO_MALA = re.compile(r"(?i)pixel|1x1|spacer|blank\.|gravatar|feedburner|/emoji/|logo|avatar|icon|\.svg(\?|$)|data:|"
+                       r"doubleclick|/ads?/|banner|placeholder")
+
+
+def foto_valida(u, base=""):
+    u = html.unescape((u or "").strip())
+    if not u:
+        return ""
+    u = urllib.parse.urljoin(base, u)
+    if u.startswith("http://"):
+        u = "https://" + u[7:]
+    return u if u.startswith("https://") and not FOTO_MALA.search(u) else ""
+
+
+def foto_en_html(t, base=""):
+    """Primera imagen de verdad dentro de un trozo de HTML."""
+    for m in re.finditer(r"(?is)<img\b[^>]*>", t or ""):
+        etiqueta = m.group(0)
+        anchura = re.search(r"(?i)\bwidth=[\"']?(\d+)", etiqueta)
+        if anchura and int(anchura.group(1)) < 200:
+            continue
+        src = re.search(r"(?i)\b(?:data-src|src)=[\"']([^\"']+)", etiqueta)
+        if src and foto_valida(src.group(1), base):
+            return foto_valida(src.group(1), base)
+    return ""
+
+
+def foto_de_item(el, contenido, base=""):
+    """Foto de un artículo de RSS/Atom: media:content, media:thumbnail, enclosure o la primera <img> del texto."""
+    for c in el.iter():
+        nombre = local(c.tag)
+        if nombre in ("content", "thumbnail") and c.get("url") and \
+                (c.get("medium") in (None, "image") and (c.get("type") or "image").startswith("image")):
+            f = foto_valida(c.get("url"), base)
+            if f:
+                return f
+        if nombre in ("enclosure", "link") and (c.get("type") or "").startswith("image") and (c.get("url") or c.get("href")):
+            f = foto_valida(c.get("url") or c.get("href"), base)
+            if f:
+                return f
+    return foto_en_html(contenido, base)
+
+
 def leer_canal(datos, base=""):
     """Devuelve una lista de dicts {t, u, d, r, cats}. Acepta RSS 2.0, RSS 1.0 (RDF) y Atom."""
     raiz = xml_a_arbol(datos)
@@ -301,7 +344,8 @@ def leer_canal(datos, base=""):
             cats = [c.get("term") or c.get("label") or "" for c in e if local(c.tag) == "category"]
             notas.append({"t": texto_de(hijo(e, "title")), "u": enlace,
                           "d": fecha_de(texto_de(hijo(e, "published")) or texto_de(hijo(e, "updated"))),
-                          "r": resumen, "cats": cats, "x": texto_de(hijo(e, "content"))})
+                          "r": resumen, "cats": cats, "x": texto_de(hijo(e, "content")),
+                          "i": foto_de_item(e, texto_de(hijo(e, "content")) or resumen, enlace)})
     else:
         for it in raiz.iter():
             if local(it.tag) != "item":
@@ -323,7 +367,8 @@ def leer_canal(datos, base=""):
             completo = texto_de(hijo(it, "encoded"))
             desc = texto_de(hijo(it, "description"))
             notas.append({"t": texto_de(hijo(it, "title")), "u": enlace, "d": fecha, "r": resumen, "cats": cats,
-                          "x": completo if len(completo) > len(desc) else desc})
+                          "x": completo if len(completo) > len(desc) else desc,
+                          "i": foto_de_item(it, completo + " " + desc, enlace)})
     for n in notas:
         n["u"] = urllib.parse.urljoin(base, n["u"].strip()) if n["u"] else ""
     return notas[:80]
@@ -381,17 +426,31 @@ def leer_json(datos, base=""):
             notas.append({"t": t, "u": urllib.parse.urljoin(base, u), "d": fecha_de(f),
                           "r": valor(d, "excerpt", "summary", "description", "entradilla", "resumen", "subtitle"),
                           "x": valor(d, "content", "body", "text", "texto", "contenido", "cuerpo"),
+                          "i": foto_valida(foto_json(d), base) or
+                               foto_en_html(valor(d, "content", "body", "text"), base),
                           "cats": cats, "_crudo": {k: (str(v)[:60]) for k, v in list(d.items())[:25]}})
         if len(notas) >= 3:
             return notas
     return []
 
 
+def foto_json(d):
+    for k in ("jetpack_featured_media_url", "image", "imageSEO", "imagen", "thumbnail", "featured_image", "picture"):
+        v = d.get(k)
+        if isinstance(v, list) and v:
+            v = v[0]
+        if isinstance(v, dict):
+            v = v.get("url") or v.get("src") or v.get("href")
+        if isinstance(v, str) and v.startswith("http"):
+            return v
+    return ""
+
+
 def url_wordpress(espec):
     """«wp:https://medio.com» o «wp:https://medio.com|categoria» → dirección de la API de WordPress."""
     sitio, _, categoria = espec[3:].partition("|")
     sitio = sitio.rstrip("/")
-    campos = "&_fields=title,link,date_gmt,excerpt,content"
+    campos = "&_fields=title,link,date_gmt,excerpt,content,jetpack_featured_media_url"
     if not categoria:
         return sitio + "/wp-json/wp/v2/posts?per_page=40" + campos
     datos, _, _ = descargar(sitio + "/wp-json/wp/v2/categories?slug=" + urllib.parse.quote(categoria) + "&_fields=id")
@@ -819,6 +878,9 @@ def tiempo_html(t):
                man["min"], man["max"], esc(man["cielo"]), lluvia(man)))
 
 
+SAL_LECTURAS = [""]  # identifica la edición de lecturas.json (para no descargarla dos veces)
+
+
 def pagina(titulo, activo, cuerpo, config, extra_cab="", script_extra=""):
     hoy = local_dt(AHORA)
     nav = ['<a href="index.html"%s>Portada</a>' % (' aria-current="page"' if activo == "index" else "")]
@@ -837,7 +899,7 @@ def pagina(titulo, activo, cuerpo, config, extra_cab="", script_extra=""):
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <meta name="referrer" content="no-referrer">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; connect-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data: https:; style-src 'self'; script-src 'self'; connect-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="theme-color" content="#1f3a5f">
 <title>%(titulo)s</title>
 <link rel="icon" href="icono.png">
@@ -846,7 +908,7 @@ def pagina(titulo, activo, cuerpo, config, extra_cab="", script_extra=""):
 <link rel="stylesheet" href="estilo.css?v=%(v)s">
 <script src="diario.js?v=%(v)s" defer></script>%(extra_js)s
 </head>
-<body data-gen="%(gen)d">
+<body data-gen="%(gen)d" data-lect="%(lect)s">
 <header class="cab" id="arriba">
   <div class="fecha">%(fecha)s</div>
   <h1><a href="index.html">El Diario de Paco</a></h1>
@@ -872,7 +934,7 @@ def pagina(titulo, activo, cuerpo, config, extra_cab="", script_extra=""):
 </html>
 """ % {"titulo": esc(titulo), "v": AHORA.strftime("%Y%m%d%H%M"), "gen": AHORA.timestamp(),
        "fecha": esc(fecha_larga(AHORA).capitalize()), "cumple": cumple, "extra": extra_cab, "nav": "".join(nav),
-       "cuerpo": cuerpo, "act": esc(fecha_larga(AHORA, False)),
+       "cuerpo": cuerpo, "act": esc(fecha_larga(AHORA, False)), "lect": esc(SAL_LECTURAS[0]),
        "extra_js": ('\n<script src="%s?v=%s" defer></script>' % (script_extra, AHORA.strftime("%Y%m%d%H%M"))) if script_extra else "", "hora": local_dt(AHORA).strftime("%H:%M")}
 
 
@@ -882,6 +944,7 @@ def escribir(ruta, texto):
 
 
 def generar_web(config, secciones, estados, descartes, tiempo, salida, paquete=None):
+    SAL_LECTURAS[0] = paquete["sal"] if paquete else ""
     if os.path.exists(salida):
         shutil.rmtree(salida)
     os.makedirs(salida)
@@ -1023,24 +1086,33 @@ def preparar_lecturas(config, secciones, sin_red=False):
         h, letras = lectura.limpiar_html(n.get("x") or "")
         if letras >= 600:
             n["leer"] = h
-        elif n["u"] in cache:
-            if cache[n["u"]]["n"] >= 400:
-                n["leer"] = lectura.limpiar_html(cache[n["u"]]["h"])[0]  # se vuelve a limpiar con las reglas actuales
-        elif not sin_red:
+        guardado = cache.get(n["u"])
+        if guardado:
+            if not n.get("leer") and guardado["n"] >= 400:
+                n["leer"] = lectura.limpiar_html(guardado["h"])[0]  # se vuelve a limpiar con las reglas actuales
+            if not n.get("i") and guardado.get("i"):
+                n["i"] = guardado["i"]
+            if "i" not in guardado and not n.get("i") and not sin_red:
+                pendientes.append(n)  # entrada antigua de la caché, sin mirar la foto
+        elif not sin_red and (not n.get("leer") or not n.get("i")):
             pendientes.append(n)
 
     def de_la_pagina(n):
         try:
-            datos, _, tipo = descargar(n["u"], 20)
-            h, letras = lectura.extraer_de_pagina(datos.decode("utf-8", "replace"))
+            datos, final, tipo = descargar(n["u"], 20)
+            pagina = datos.decode("utf-8", "replace")
+            h, letras = lectura.extraer_de_pagina(pagina)
+            foto = foto_valida(lectura.foto_de_pagina(pagina), final)
         except Exception:  # noqa: BLE001
-            h, letras = "", 0
-        return n, h, letras
+            h, letras, foto = "", 0, ""
+        return n, h, letras, foto
     with concurrent.futures.ThreadPoolExecutor(max_workers=6) as ex:
-        for n, h, letras in ex.map(de_la_pagina, pendientes):
-            cache[n["u"]] = {"h": h if letras >= 400 else "", "n": letras, "t": AHORA.timestamp()}
-            if letras >= 400:
+        for n, h, letras, foto in ex.map(de_la_pagina, pendientes):
+            cache[n["u"]] = {"h": h if letras >= 400 else "", "n": letras, "i": foto, "t": AHORA.timestamp()}
+            if not n.get("leer") and letras >= 400:
                 n["leer"] = h
+            if not n.get("i") and foto:
+                n["i"] = foto
     os.makedirs(os.path.dirname(CACHE_TEXTOS), exist_ok=True)
     json.dump(cache, open(CACHE_TEXTOS, "w", encoding="utf-8"), ensure_ascii=False)
     # el titular repetido como primer párrafo sobra
@@ -1058,8 +1130,8 @@ def preparar_lecturas(config, secciones, sin_red=False):
         a = por_fuente.setdefault(n["f"], [0, 0])
         a[0] += 1
         a[1] += 1 if n.get("leer") else 0
-    print("Lectura dentro del Diario: %d de %d noticias (%d sacadas de la página)" % (
-        len(con_texto), len(notas), sum(1 for n in pendientes if n.get("leer"))))
+    print("Lectura dentro del Diario: %d de %d noticias (%d páginas consultadas) · con foto: %d" % (
+        len(con_texto), len(notas), len(pendientes), sum(1 for n in con_texto if n.get("i"))))
     for f, (total, ok) in sorted(por_fuente.items()):
         if ok < total:
             print("  %-38s %d de %d" % (f[:38], ok, total))
@@ -1086,7 +1158,7 @@ def preparar_lecturas(config, secciones, sin_red=False):
             n.pop("leer", None)
         return None
     datos = {lectura.id_de(n["u"]): {"t": n["t"], "f": n["f"], "u": n["u"], "s": nombres.get(n["s"], ""),
-                                     "d": n["d"].isoformat() if n["d"] else None, "h": n["leer"],
+                                     "d": n["d"].isoformat() if n["d"] else None, "h": n["leer"], "i": n.get("i", ""),
                                      "o": [[f, u] for f, u in n["tambien"][:4]]} for n in con_texto}
     return lectura.cifrar(json.dumps(datos, ensure_ascii=False, separators=(",", ":")).encode("utf-8"), clave)
 

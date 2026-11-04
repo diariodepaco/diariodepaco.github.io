@@ -48,6 +48,63 @@
     location.href = 'leer.html#' + a.getAttribute('data-leer');
   });
 
+  // Noticias guardadas (cifradas): se descifran aquí, una vez por sesión
+  function b64(t) { var x = atob(t), a = new Uint8Array(x.length); for (var i = 0; i < x.length; i++) a[i] = x.charCodeAt(i); return a; }
+  window.diarioLecturas = function () {
+    var k = clave();
+    if (!k || !window.crypto || !crypto.subtle || !window.fetch) return Promise.reject(new Error('sin clave'));
+    var edicion = document.body.getAttribute('data-lect') || '';
+    try {
+      var g = JSON.parse(sessionStorage.getItem('diario_lecturas') || 'null');
+      if (g && edicion && g.sal === edicion) return Promise.resolve(g.lista);
+    } catch (x) {}
+    return fetch('lecturas.json').then(function (r) { return r.json(); }).then(function (p) {
+      try {
+        var g2 = JSON.parse(sessionStorage.getItem('diario_lecturas') || 'null');
+        if (g2 && g2.sal === p.sal) return g2.lista;
+      } catch (x) {}
+      return crypto.subtle.importKey('raw', new TextEncoder().encode(k), 'PBKDF2', false, ['deriveKey']).then(function (base) {
+        return crypto.subtle.deriveKey({ name: 'PBKDF2', salt: b64(p.sal), iterations: p.iter, hash: 'SHA-256' },
+          base, { name: 'AES-GCM', length: 256 }, false, ['decrypt']);
+      }).then(function (llave) {
+        return crypto.subtle.decrypt({ name: 'AES-GCM', iv: b64(p.iv) }, llave, b64(p.datos));
+      }).then(function (claro) {
+        var lista = JSON.parse(new TextDecoder().decode(claro));
+        try { sessionStorage.setItem('diario_lecturas', JSON.stringify({ sal: p.sal, lista: lista })); } catch (x) {}
+        return lista;
+      });
+    });
+  };
+
+  // Fotos en las listas (solo en los aparatos con la llave): grande en la primera de cada bloque de la portada
+  function ponerFotos() {
+    if (!clave() || !document.querySelector('a[data-leer]') || document.getElementById('lectura')) return;
+    window.diarioLecturas().then(function (lista) {
+      var notas = document.querySelectorAll('article.nota');
+      for (var i = 0; i < notas.length; i++) {
+        var a = notas[i].querySelector('a[data-leer]');
+        var n = a && lista[a.getAttribute('data-leer')];
+        if (!n || !n.i || notas[i].querySelector('img')) continue;
+        var primera = notas[i].parentNode.classList.contains('bloque') &&
+          notas[i].parentNode.querySelector('article.nota') === notas[i];
+        var enlace = document.createElement('a');
+        enlace.href = a.getAttribute('href');
+        enlace.setAttribute('data-leer', a.getAttribute('data-leer'));
+        enlace.className = primera ? 'foto-grande' : 'miniatura';
+        var img = document.createElement('img');
+        img.alt = '';
+        img.loading = 'lazy';
+        img.referrerPolicy = 'no-referrer';
+        img.addEventListener('error', function () { var e = this.parentNode; if (e && e.parentNode) e.parentNode.removeChild(e); });
+        img.src = n.i;
+        enlace.appendChild(img);
+        if (primera) notas[i].insertBefore(enlace, notas[i].firstChild);
+        else notas[i].insertBefore(enlace, notas[i].querySelector('h3'));
+      }
+    }).catch(function () {});
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', ponerFotos); else ponerFotos();
+
   // Botón de volver arriba: solo cuando ya se ha bajado un buen trozo
   var subir = document.getElementById('subir'), mirando = false;
   function botonSubir() {

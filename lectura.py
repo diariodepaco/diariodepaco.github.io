@@ -310,6 +310,30 @@ def extraer_de_pagina(pagina):
     return limpiar_html("".join(trozos))
 
 
+def foto_de_pagina(pagina):
+    """Foto principal de la página: og:image / twitter:image o la «image» de sus datos estructurados."""
+    cabeza = pagina[:400_000]
+    for patron in (r'(?is)<meta[^>]+(?:property|name)=["\'](?:og:image(?::secure_url)?|og:image:url)["\'][^>]*>',
+                   r'(?is)<meta[^>]+name=["\']twitter:image(?::src)?["\'][^>]*>'):
+        for m in re.finditer(patron, cabeza):
+            c = re.search(r'(?i)content=["\']([^"\']+)', m.group(0))
+            if c:
+                return c.group(1)
+    for bloque in re.findall(r'(?is)<script[^>]+application/ld\+json[^>]*>(.*?)</script>', cabeza):
+        try:
+            j = json.loads(bloque.strip())
+        except ValueError:
+            continue
+        for x in (j if isinstance(j, list) else [j]):
+            if isinstance(x, dict) and x.get("image"):
+                im = x["image"]
+                im = im[0] if isinstance(im, list) and im else im
+                im = im.get("url") if isinstance(im, dict) else im
+                if isinstance(im, str):
+                    return im
+    return ""
+
+
 # ---------------------------------------------------------------------------------------------------------
 # Paquete cifrado
 # ---------------------------------------------------------------------------------------------------------

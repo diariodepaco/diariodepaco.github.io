@@ -1,5 +1,5 @@
 /* El Diario de Paco: guarda la última edición para leerla sin conexión. Solo toca las páginas del propio diario. */
-var CACHE = 'diario-v3';
+var CACHE = 'diario-v4';
 var BASICOS = ['./', 'index.html', 'leer.html', 'estilo.css', 'diario.js', 'leer.js', 'icono-192.png', 'fonts/Lora-Regular.ttf',
   'fonts/Lora-SemiBold.ttf', 'fonts/Poppins-Medium.ttf', 'fonts/Poppins-Bold.ttf'];
 self.addEventListener('install', function (e) {
