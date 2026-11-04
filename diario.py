@@ -670,6 +670,12 @@ def generar_web(config, secciones, estados, descartes, tiempo, salida):
             shutil.copy(os.path.join(AQUI, "web", nombre), os.path.join(salida, nombre))
     if os.path.isdir(os.path.join(AQUI, "fonts")):
         shutil.copytree(os.path.join(AQUI, "fonts"), os.path.join(salida, "fonts"))
+    # la app de la tablet (carpeta app/ del repositorio) se publica junto a la web: …/diario-paco/diario.apk
+    carpeta_app = os.path.join(AQUI, "app")
+    if os.path.isdir(carpeta_app):
+        for nombre in os.listdir(carpeta_app):
+            if nombre.endswith(".apk"):
+                shutil.copy(os.path.join(carpeta_app, nombre), os.path.join(salida, nombre))
     escribir(os.path.join(salida, "robots.txt"), "User-agent: *\nDisallow: /\n")
     escribir(os.path.join(salida, ".nojekyll"), "")
     cab = tiempo_html(tiempo)
@@ -801,6 +807,11 @@ def main():
     tiempo = None if a.muestras is not None or not config.get("tiempo") else el_tiempo(config["tiempo"])
     estados = [e for _, _, e in resultados]
     generar_web(config, secciones, estados, descartes, tiempo, a.out)
+    print("Titulares publicados:")
+    for s in config["secciones"]:
+        print("  == " + s["nombre"])
+        for n in secciones[s["id"]]["notas"]:
+            print("   %s %s — %s%s" % ("*" if n["galdar"] else "-", n["t"][:120], n["f"], " (+%d)" % len(n["tambien"]) if n["tambien"] else ""))
     print("Secciones:", {k: len(v["notas"]) for k, v in secciones.items()}, "· descartadas:", len(descartes))
     print("Web creada en", a.out)
     if not any(e["ok"] for e in estados):
