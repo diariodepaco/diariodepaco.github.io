@@ -148,11 +148,11 @@ def limpiar_html(fuente):
     bloques = re.findall(r"(?s)<(p|h3|ul|ol|blockquote)>(.*?)</\1>", salida)
     limpio, letras = [], 0
     for k, (tag, dentro) in enumerate(bloques):
-        plano = html.unescape(re.sub(r"<[^>]+>", "", dentro)).strip()
-        if not plano or ENTRADA.search(plano):
+        plano = re.sub(r"\s+", " ", html.unescape(re.sub(r"<[^>]+>", " ", dentro))).strip()
+        if not plano or ENTRADA.search(plano) or (tag in ("ul", "ol") and len(plano) < 40):
             continue
         if tag in ("p", "h3") and (
-                (len(plano) < 140 and RELLENO.search(plano)) or (len(plano) < 220 and RELLENO_CORTO.search(plano)) or
+                (len(plano) < 140 and RELLENO.search(plano)) or (len(plano) < 320 and RELLENO_CORTO.search(plano)) or
                 (len(plano) < 45 and ("|" in plano or plano.endswith(":") and k == 0)) or
                 (len(plano) < 30 and plano.upper() == plano and k < 2)):
             continue
