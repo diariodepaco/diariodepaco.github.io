@@ -299,7 +299,7 @@ def leer_canal(datos, base=""):
             cats = [c.get("term") or c.get("label") or "" for c in e if local(c.tag) == "category"]
             notas.append({"t": texto_de(hijo(e, "title")), "u": enlace,
                           "d": fecha_de(texto_de(hijo(e, "published")) or texto_de(hijo(e, "updated"))),
-                          "r": resumen, "cats": cats})
+                          "r": resumen, "cats": cats, "x": texto_de(hijo(e, "content"))})
     else:
         for it in raiz.iter():
             if local(it.tag) != "item":
@@ -318,7 +318,10 @@ def leer_canal(datos, base=""):
                         break
             resumen = texto_de(hijo(it, "description")) or texto_de(hijo(it, "encoded"))
             cats = [texto_de(c) for c in it if local(c.tag) in ("category", "subject")]
-            notas.append({"t": texto_de(hijo(it, "title")), "u": enlace, "d": fecha, "r": resumen, "cats": cats})
+            completo = texto_de(hijo(it, "encoded"))
+            desc = texto_de(hijo(it, "description"))
+            notas.append({"t": texto_de(hijo(it, "title")), "u": enlace, "d": fecha, "r": resumen, "cats": cats,
+                          "x": completo if len(completo) > len(desc) else desc})
     for n in notas:
         n["u"] = urllib.parse.urljoin(base, n["u"].strip()) if n["u"] else ""
     return notas[:80]
@@ -375,6 +378,7 @@ def leer_json(datos, base=""):
                     cats.append(v.strip())
             notas.append({"t": t, "u": urllib.parse.urljoin(base, u), "d": fecha_de(f),
                           "r": valor(d, "excerpt", "summary", "description", "entradilla", "resumen", "subtitle"),
+                          "x": valor(d, "content", "body", "text", "texto", "contenido", "cuerpo"),
                           "cats": cats, "_crudo": {k: (str(v)[:60]) for k, v in list(d.items())[:25]}})
         if len(notas) >= 3:
             return notas
@@ -385,7 +389,7 @@ def url_wordpress(espec):
     """«wp:https://medio.com» o «wp:https://medio.com|categoria» → dirección de la API de WordPress."""
     sitio, _, categoria = espec[3:].partition("|")
     sitio = sitio.rstrip("/")
-    campos = "&_fields=title,link,date_gmt,excerpt"
+    campos = "&_fields=title,link,date_gmt,excerpt,content"
     if not categoria:
         return sitio + "/wp-json/wp/v2/posts?per_page=40" + campos
     datos, _, _ = descargar(sitio + "/wp-json/wp/v2/categories?slug=" + urllib.parse.quote(categoria) + "&_fields=id")
@@ -423,6 +427,7 @@ def leer_canal_a_mano(datos, base=""):
         notas.append({"t": campo("title"), "u": urllib.parse.urljoin(base, html.unescape(enlace)),
                       "d": fecha_de(campo("pubDate", "dc:date", "published", "updated")),
                       "r": campo("description", "summary", "content:encoded", "content"),
+                      "x": campo("content:encoded", "content", "description"),
                       "cats": [re.sub(r"(?s)<!\[CDATA\[(.*?)\]\]>", r"\1", c) for c in
                                re.findall(r"(?is)<category\b[^>]*>(.*?)</category>", bloque)]})
     return notas
@@ -1037,6 +1042,13 @@ def main():
         print("  %-38s %3d · %3d · %s · fechas %s → %s" % (f["nombre"][:38], e.get("validas", 0), publicadas.get(f["nombre"], 0),
               e.get("descartadas", {}), fechas[0].strftime("%d/%m %H:%M") if fechas else "-",
               fechas[-1].strftime("%d/%m %H:%M") if fechas else "-"))
+    print("Texto completo en el canal (noticias con más de 800 letras / publicadas):")
+    for f, notas, e in resultados:
+        pub = [n for sec in secciones.values() for n in sec["notas"] if n["f"] == f["nombre"]]
+        largos = [n for n in pub if len(limpiar_texto(n.get("x") or "")) >= 800]
+        if pub:
+            print("  %-38s %3d / %3d  (media %d letras)" % (f["nombre"][:38], len(largos), len(pub),
+                  sum(len(limpiar_texto(n.get("x") or "")) for n in pub) // len(pub)))
     print("Titulares publicados:")
     for s in config["secciones"]:
         print("  == " + s["nombre"])
