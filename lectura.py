@@ -24,8 +24,8 @@ RELLENO = re.compile(r"(?i)^\s*(la entrada .{0,300} (se public[oó]|apareci[oó]
 
 RELLENO_CORTO = re.compile(r"(?i)(fuente de la imagen|pie de foto|t[ií]tulo de la imagen|^archivo\s*[-–]|suscrib|newsletter|"
                            r"bolet[ií]n|descarga (nuestra|la) app|s[ií]guenos|activa las notificaciones|haz clic|pincha aqu[ií]|"
-                           r"lee aqu[ií]|ap[uú]ntate|^foto(grafía)?s?\s*[:|]|^imagen\s*[:|]|^v[ií]deo\s*[:|])")
-ENTRADA = re.compile(r"(?i)^\s*(la entrada|the post|el art[ií]culo) .{0,400} (se public[oó]|apareci[oó]|appeared) (primero )?(en|on)\b")
+                           r"lee aqu[ií]|ap[uú]ntate|seguirnos|s[ií]guenos|canal de whatsapp|^foto(grafía)?s?\s*[:|]|^imagen\s*[:|]|^v[ií]deo\s*[:|])")
+ENTRADA = re.compile(r"(?i)^\s*(la entrada|the post|el art[ií]culo) .{0,400} (se public[oó]|apareci[oó]|appeared|fue escrita|fue publicad[oa]) (primero )?(en|on)\b")
 
 
 def _partir(texto, objetivo=420):
@@ -156,6 +156,15 @@ def limpiar_html(fuente):
                 (len(plano) < 45 and ("|" in plano or plano.endswith(":") and k == 0)) or
                 (len(plano) < 30 and plano.upper() == plano and k < 2)):
             continue
+        if tag in ("ul", "ol"):
+            # listas de «síguenos en…», «suscríbete…»: fuera los puntos de relleno
+            items = re.findall(r"(?s)<li>(.*?)</li>", dentro)
+            buenos = [i for i in items if not RELLENO_CORTO.search(re.sub(r"<[^>]+>", " ", html.unescape(i)))]
+            if not buenos:
+                continue
+            if len(buenos) < len(items):
+                dentro = "".join("<li>%s</li>" % i for i in buenos)
+                plano = re.sub(r"\s+", " ", html.unescape(re.sub(r"<[^>]+>", " ", dentro))).strip()
         if tag == "p" and len(plano) > 900 and "<" not in dentro:
             for trozo in _partir(plano):
                 limpio.append("<p>%s</p>" % _esc(trozo))

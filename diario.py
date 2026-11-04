@@ -1074,8 +1074,6 @@ def preparar_lecturas(config, secciones, sin_red=False):
             parrafos = [re.sub(r"<[^>]+>", "", x) for x in re.findall(r"(?s)<(?:p|h3|li)>(.*?)</(?:p|h3|li)>", n["leer"])]
             print("  [%s] %d párrafos | 1º: %s | último: %s" % (n["f"], len(parrafos), parrafos[0][:90] if parrafos else "",
                                                             parrafos[-1][:90] if parrafos else ""))
-            if n["f"] in ("BBC News Mundo", "Eureka (Daniel Marín)"):
-                print("      último en crudo: %r" % n["leer"][-420:])
     clave = os.environ.get("CLAVE_DIARIO", "").strip()
     if not clave:
         print("  (sin CLAVE_DIARIO: las noticias se abren en la web de cada medio)")

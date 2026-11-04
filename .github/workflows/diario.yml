@@ -46,7 +46,6 @@ jobs:
       - name: Generar el diario
         env:
           CLAVE_DIARIO: ${{ secrets.CLAVE_DIARIO }}
-          DIAGNOSTICO_LECTURA: "1"
         run: python diario.py --out _site
 
       - uses: actions/configure-pages@v6
