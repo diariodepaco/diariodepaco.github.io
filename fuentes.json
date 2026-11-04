@@ -7,6 +7,8 @@
     {"id": "mundo", "nombre": "Mundo", "corto": "Mundo", "horas": 30, "max": 25, "portada": 5},
     {"id": "ciencia", "nombre": "Ciencia y espacio", "corto": "Ciencia", "horas": 120, "max": 22, "portada": 5},
     {"id": "historia", "nombre": "Historia y arqueología", "corto": "Historia", "horas": 336, "max": 18, "portada": 4},
+    {"id": "cultura", "nombre": "Cultura", "corto": "Cultura", "horas": 72, "max": 14, "portada": 4},
+    {"id": "salud", "nombre": "Salud", "corto": "Salud", "horas": 96, "max": 10, "portada": 3},
     {"id": "bodega", "nombre": "La Bodega: vino y buena mesa", "corto": "Bodega", "horas": 168, "max": 15, "portada": 4},
     {"id": "musica", "nombre": "Música", "corto": "Música", "horas": 336, "max": 15, "portada": 4},
     {"id": "futbol", "nombre": "UD Las Palmas y fútbol", "corto": "Fútbol", "horas": 48, "max": 15, "portada": 4}
@@ -55,6 +57,8 @@
      "unir": true, "feeds": ["https://www.agenciasinc.es/feed/Ciencia", "https://www.agenciasinc.es/feed/Tierra"], "home": "https://www.agenciasinc.es/"},
     {"nombre": "Instituto de Astrofísica de Canarias", "tipo": "Centro público de investigación astronómica", "seccion": "ciencia", "max": 5,
      "unir": true, "feeds": ["https://www.iac.es/es/feed_news", "https://www.iac.es/es/feed_press_release_news", "https://www.iac.es/es/feed_research_news_iac"], "home": "https://www.iac.es/es"},
+    {"nombre": "EFE Ciencia", "tipo": "Agencia EFE, sección de ciencia", "seccion": "ciencia", "max": 5, "exigir": "astronom\\w*|planeta\\w*|galaxia\\w*|estrella\\w*|universo|nasa|esa|telescopio\\w*|cometa\\w*|asteroide\\w*|luna|lunar|marte|jupiter|saturno|espacial\\w*|cohete\\w*|satelite\\w*|cientific\\w*|investigador\\w*|estudio|descubr\\w*|especie\\w*|fosil\\w*|dinosaurio\\w*|volcan\\w*|clima\\w*|genetic\\w*|biolog\\w*|fisic\\w*|quimic\\w*|arqueolog\\w*|yacimiento\\w*",
+     "feeds": ["wp:https://efe.com|ciencia-y-tecnologia"], "home": "https://efe.com/ciencia-y-tecnologia/"},
     {"nombre": "Eureka (Daniel Marín)", "tipo": "Blog de astronomía y exploración espacial", "seccion": "ciencia", "max": 4,
      "feeds": ["https://danielmarin.naukas.com/feed/"], "home": "https://danielmarin.naukas.com/"},
     {"nombre": "Europa Press Ciencia", "activa": false, "_nota": "Su canal de ciencia no se actualiza desde octubre de 2026", "tipo": "Agencia de noticias, sección de ciencia y espacio", "seccion": "ciencia", "max": 5, "titulo_canal": "ciencia|astronom|espacio|universo", "frescura_dias": 4,
@@ -81,6 +85,15 @@
      "feeds": ["wp:https://www.udlaspalmas.es", "https://www.udlaspalmas.es/feed/"], "home": "https://www.udlaspalmas.es/"},
     {"nombre": "Europa Press Deportes", "tipo": "Agencia de noticias, sección de deportes (solo fútbol)", "seccion": "futbol", "max": 8, "titulo_canal": "deporte|futbol",
      "feeds": [], "home": "https://www.europapress.es/deportes/"},
+
+    {"nombre": "EFE Cultura", "tipo": "Agencia EFE, sección de cultura", "seccion": "cultura", "max": 8,
+     "feeds": ["wp:https://efe.com|cultura"], "home": "https://efe.com/cultura/"},
+    {"nombre": "elDiario.es Cultura", "tipo": "Periódico financiado por sus socios, sección de cultura", "seccion": "cultura", "max": 6,
+     "feeds": ["https://www.eldiario.es/rss/cultura/"], "home": "https://www.eldiario.es/cultura/"},
+    {"nombre": "EFE Salud", "tipo": "Agencia EFE, información de salud", "seccion": "salud", "max": 6,
+     "feeds": ["wp:https://efesalud.com", "https://efesalud.com/feed/"], "home": "https://efesalud.com/"},
+    {"nombre": "SINC Salud", "tipo": "Agencia pública de noticias científicas (FECYT), sección de salud", "seccion": "salud", "max": 5,
+     "feeds": ["https://www.agenciasinc.es/feed/Salud"], "home": "https://www.agenciasinc.es/"},
 
     {"nombre": "EFE Agro", "tipo": "Agencia EFE, sección de agricultura y alimentación", "seccion": "bodega", "max": 6, "exigir": "vino|vinos|vinic\\w*|vitivinic\\w*|bodega\\w*|vendimia\\w*|vinedo\\w*|uva|uvas|rioja|denominacion\\w* de origen|queso\\w*|miel|mieles|apicult\\w*|platano\\w*|aguacate\\w*|mango\\w*|papaya\\w*|fruta\\w*|gastronom\\w*|enolog\\w*|sumiller\\w*|cata|catas|cava|tinto\\w*|malvasia|listan|albarino|tempranillo|garnacha|verdejo|aceite de oliva|cocina|cocinero\\w*|chef\\w*|restaurante\\w*|receta\\w*",
      "feeds": ["wp:https://efeagro.com", "https://efeagro.com/feed/"], "home": "https://efeagro.com/"},

@@ -4,7 +4,7 @@ name: Diario de Paco
 
 on:
   schedule:
-    - cron: "17 */2 * * *"   # cada dos horas (hora UTC; en Canarias es la misma en invierno)
+    - cron: "41 */2 * * *"   # cada dos horas, a y 41 (hora UTC; en Canarias es la misma en invierno)
   workflow_dispatch:
   push:
     branches: [main]

@@ -634,7 +634,7 @@ def motivo_descarte(n, filtro_opinion=True):
         return "opinión o publicidad"
     if DEPORTE_URL.search(ruta) or any(DEPORTE_CAT.match(c) for c in cats) or DEPORTE_TXT.search(t):
         return "deporte"
-    if n.get("s") == "musica" and (REGUETON.search(t) or REGUETON.search(sin_tildes(n.get("r", "")[:300]))):
+    if n.get("s") in ("musica", "cultura") and (REGUETON.search(t) or REGUETON.search(sin_tildes(n.get("r", "")[:300]))):
         return "reguetón"
     if re.search(r"(?i)/(directo|en-directo|live)(/|-|$)|-directo-|-en-directo", ruta):
         return "cebo"

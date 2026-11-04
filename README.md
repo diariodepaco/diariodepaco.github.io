@@ -19,8 +19,10 @@ No hace falta ningún servidor ni pagar nada, y Paco no necesita a Claude para n
 | Gran Canaria y Canarias | Televisión Canaria (RTVC), EFE Canarias, Canarias Ahora, Europa Press Canarias, Infonorte Digital (norte de Gran Canaria) |
 | España | EFE, RTVE, Europa Press, elDiario.es, Civio, Maldita.es |
 | Mundo | EFE, Europa Press, BBC News Mundo, France 24, DW |
-| Ciencia y espacio | Agencia SINC, Instituto de Astrofísica de Canarias, Eureka (Daniel Marín), Naukas, The Conversation |
+| Ciencia y espacio | Agencia SINC, EFE Ciencia (solo ciencia, no aparatos), Instituto de Astrofísica de Canarias, Eureka (Daniel Marín), Naukas, The Conversation |
 | Historia y arqueología | La Brújula Verde, Desperta Ferro, El Museo Canario, The Conversation |
+| Cultura | EFE Cultura, elDiario.es Cultura (sin reguetón) |
+| Salud | EFE Salud, SINC Salud |
 | La Bodega: vino y buena mesa | EFE Agro (solo vino, quesos, mieles, frutas y gastronomía), La Prensa del Rioja, Vinetur (solo vino y quesos); lo canario, arriba |
 | Música | Efe Eme, Ruta 66 (sin nada de reguetón) |
 | UD Las Palmas y fútbol | Web de la UD Las Palmas, Europa Press Deportes y el fútbol de las demás fuentes; la UD siempre arriba |
