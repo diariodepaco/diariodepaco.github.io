@@ -807,9 +807,11 @@ def tiempo_html(t):
 def pagina(titulo, activo, cuerpo, config, extra_cab=""):
     hoy = local_dt(AHORA)
     nav = ['<a href="index.html"%s>Portada</a>' % (' aria-current="page"' if activo == "index" else "")]
+    recargar = '<a href="%s.html" class="recargar" title="Actualizar">↻</a>' % activo
     for s in config["secciones"]:
         nav.append('<a href="%s.html"%s>%s</a>' % (s["id"], ' aria-current="page"' if activo == s["id"] else "",
                                                    esc(s.get("corto", s["nombre"]))))
+    nav.append(recargar)
     cumple = ""
     if (hoy.month, hoy.day) == (11, 4):
         cumple = '<div class="cumple">¡Feliz cumpleaños, Paco! 🎂</div>'
@@ -824,6 +826,8 @@ def pagina(titulo, activo, cuerpo, config, extra_cab=""):
 <meta name="theme-color" content="#1f3a5f">
 <title>%(titulo)s</title>
 <link rel="icon" href="icono.png">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icono-192.png">
 <link rel="stylesheet" href="estilo.css?v=%(v)s">
 <script src="diario.js?v=%(v)s" defer></script>
 </head>
@@ -835,6 +839,10 @@ def pagina(titulo, activo, cuerpo, config, extra_cab=""):
   %(cumple)s%(extra)s
 </header>
 <nav class="secciones" aria-label="Secciones">%(nav)s</nav>
+<div id="instalar" class="instalar" hidden>
+  <button type="button" id="btn-instalar">Instalar El Diario en esta tablet</button>
+  <span>Quedará un icono en la pantalla de inicio, como una aplicación más.</span>
+</div>
 <div id="aviso" class="aviso" hidden></div>
 <main>
 %(cuerpo)s
@@ -860,18 +868,10 @@ def generar_web(config, secciones, estados, descartes, tiempo, salida):
     if os.path.exists(salida):
         shutil.rmtree(salida)
     os.makedirs(salida)
-    for nombre in ("estilo.css", "diario.js", "icono.png"):
-        if os.path.exists(os.path.join(AQUI, "web", nombre)):
-            shutil.copy(os.path.join(AQUI, "web", nombre), os.path.join(salida, nombre))
+    for nombre in sorted(os.listdir(os.path.join(AQUI, "web"))):
+        shutil.copy(os.path.join(AQUI, "web", nombre), os.path.join(salida, nombre))
     if os.path.isdir(os.path.join(AQUI, "fonts")):
         shutil.copytree(os.path.join(AQUI, "fonts"), os.path.join(salida, "fonts"))
-    # la app de la tablet (carpeta app/ del repositorio) se publica junto a la web: …/diario-paco/diario.apk
-    carpeta_app = os.path.join(AQUI, "app")
-    if os.path.isdir(carpeta_app):
-        for nombre in os.listdir(carpeta_app):
-            if nombre.endswith(".apk"):
-                shutil.copy(os.path.join(carpeta_app, nombre), os.path.join(salida, nombre))
-                print("App publicada: %s (%d bytes)" % (nombre, os.path.getsize(os.path.join(salida, nombre))))
     escribir(os.path.join(salida, "robots.txt"), "User-agent: *\nDisallow: /\n")
     escribir(os.path.join(salida, ".nojekyll"), "")
     cab = tiempo_html(tiempo)
@@ -924,6 +924,9 @@ def generar_web(config, secciones, estados, descartes, tiempo, salida):
               "y debajo pone quién más lo cuenta.</p>",
               "<p>Al tocar una noticia se abre en la web del medio que la publicó. Esta página no tiene anuncios, "
               "no usa cookies y no guarda nada de quien la lee.</p>",
+              "<p><b>Para tenerlo como aplicación:</b> abre esta página en Chrome y toca «Instalar El Diario en esta "
+              "tablet» (o, en el menú ⋮ de Chrome, «Instalar aplicación» o «Añadir a pantalla de inicio»). Queda un icono "
+              "como el de cualquier otra aplicación, se abre a pantalla completa y guarda la última edición para leerla sin internet.</p>",
               "<p>Los medios se han elegido así: agencias de noticias, medios públicos, medios financiados por sus "
               "lectores, divulgación científica hecha por científicos y revistas especializadas.</p>", "</div>"]
     for s in config["secciones"]:

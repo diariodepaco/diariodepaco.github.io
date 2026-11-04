@@ -33,5 +33,26 @@
     }
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', arreglar); else arreglar();
+
+  // Se puede instalar como aplicación (sin tienda ni APK) y se lee sin conexión
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () {}); });
+  }
+  var pendiente = null;
+  window.addEventListener('beforeinstallprompt', function (e) {
+    e.preventDefault();
+    pendiente = e;
+    var caja = document.getElementById('instalar');
+    if (caja) caja.hidden = false;
+  });
+  window.addEventListener('appinstalled', function () {
+    var caja = document.getElementById('instalar');
+    if (caja) caja.hidden = true;
+  });
+  document.addEventListener('click', function (e) {
+    if (!e.target || e.target.id !== 'btn-instalar' || !pendiente) return;
+    pendiente.prompt();
+    pendiente.userChoice.then(function () { pendiente = null; document.getElementById('instalar').hidden = true; });
+  });
   document.addEventListener('visibilitychange', function () { if (!document.hidden) arreglar(); });
 })();

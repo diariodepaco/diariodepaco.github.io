@@ -41,7 +41,13 @@ a { color: inherit; }
   color: var(--azul); padding: 8px 13px; margin: 3px; border-radius: 999px; border: 1px solid var(--raya); background: #fff; }
 .secciones a[aria-current="page"] { background: var(--azul); border-color: var(--azul); color: #fff; }
 
-.aviso { max-width: 828px; margin: 12px auto 0; padding: 10px 14px; background: #fff4d9; border: 1px solid var(--ambar);
+.secciones a.recargar { font-size: 18px; padding: 6px 14px; }
+.instalar { max-width: 828px; margin: 12px 16px 0; padding: 12px 14px; background: #fff; border: 2px solid var(--azul);
+  border-radius: 12px; text-align: center; font-family: 'Poppins', Arial, sans-serif; font-size: 14px; color: var(--suave); }
+.instalar[hidden] { display: none; }
+.instalar button { display: block; width: 100%; margin: 0 0 6px; padding: 12px; border: 0; border-radius: 10px;
+  background: var(--azul); color: #fff; font-family: 'Poppins', Arial, sans-serif; font-weight: 700; font-size: 17px; }
+.aviso { max-width: 828px; margin: 12px 16px 0; padding: 10px 14px; background: #fff4d9; border: 1px solid var(--ambar);
   border-radius: 10px; font-family: 'Poppins', Arial, sans-serif; font-size: 15px; text-align: center; }
 .aviso[hidden] { display: none; }
 .aviso a { font-weight: 700; color: var(--azul); }
@@ -95,6 +101,7 @@ summary { cursor: pointer; font-weight: 700; padding: 4px 0; }
 .pie a { color: var(--azul); font-weight: 500; }
 .pie .firma { margin-top: 14px; font-family: 'Lora', Georgia, serif; font-style: italic; }
 
+@media (min-width: 860px) { .instalar, .aviso { margin: 12px auto 0; } }
 @media (min-width: 700px) {
   body { font-size: 21px; }
   .cab h1 { font-size: 54px; }

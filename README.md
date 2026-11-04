@@ -47,13 +47,11 @@ Los filtros (palabras de cebo, deporte, opinión…) están al principio de `dia
 
 El repositorio tiene que ser **público** para que GitHub Pages sea gratis. No contiene nada privado.
 
-## La app de la tablet
+## La «app» de la tablet
 
-Se descarga desde **https://diariodepaco.github.io/diario.apk** (es el archivo `app/diario.apk` de este repositorio).
+El Diario se instala desde Chrome como una aplicación más (es una *aplicación web*): se abre https://diariodepaco.github.io en la tablet y se toca **«Instalar El Diario en esta tablet»** (o menú ⋮ de Chrome › **Instalar aplicación** / **Añadir a pantalla de inicio**). Queda un icono en la pantalla de inicio, se abre a pantalla completa, se actualiza sola (no hay que reinstalar nada nunca) y guarda la última edición para leerla sin internet (`web/sw.js`). Las noticias se abren dentro, en una pestaña de Chrome con una X para volver.
 
-`El Diario de Paco` (APK aparte, no va dentro de Crucigramas) abre esta web a pantalla completa, guarda la última edición para leerla sin conexión, y abre las noticias en **modo lectura**: sin JavaScript, sin cookies y bloqueando rastreadores, así que no salen avisos de cookies ni anuncios. Tiene botones para agrandar la letra, volver al diario y abrir la noticia en el navegador si alguna no se ve bien.
-
-La clave para firmar la app **no está en este repositorio** (ni debe estarlo).
+(Hubo una APK propia, pero Google Play Protect la bloqueaba por ser una app desconocida que abre webs; con la aplicación web no hay avisos ni hay que dar permisos.)
 
 ## Probar en local
 
