@@ -24,7 +24,7 @@ RELLENO = re.compile(r"(?i)^\s*(la entrada .{0,300} (se public[oó]|apareci[oó]
 
 RELLENO_CORTO = re.compile(r"(?i)(fuente de la imagen|pie de foto|t[ií]tulo de la imagen|^archivo\s*[-–]|suscrib|newsletter|"
                            r"bolet[ií]n|descarga (nuestra|la) app|s[ií]guenos|activa las notificaciones|haz clic|pincha aqu[ií]|"
-                           r"lee aqu[ií]|ap[uú]ntate|seguirnos|s[ií]guenos|canal de whatsapp|^foto(grafía)?s?\s*[:|]|^imagen\s*[:|]|^v[ií]deo\s*[:|])")
+                           r"lee aqu[ií]|lee otras|otras noticias|ap[uú]ntate|seguirnos|s[ií]guenos|canal de whatsapp|^foto(grafía)?s?\s*[:|]|^imagen\s*[:|]|^v[ií]deo\s*[:|])")
 ENTRADA = re.compile(r"(?i)^\s*(la entrada|the post|el art[ií]culo) .{0,400} (se public[oó]|apareci[oó]|appeared|fue escrita|fue publicad[oa]) (primero )?(en|on)\b")
 
 
