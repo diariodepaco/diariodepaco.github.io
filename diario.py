@@ -136,14 +136,17 @@ def descargar(url, tiempo=25):
     req = urllib.request.Request(url, headers={
         "User-Agent": UA, "Accept-Language": "es-ES,es;q=0.9",
         "Accept": "application/rss+xml, application/atom+xml, application/xml;q=0.9, text/xml;q=0.9, text/html;q=0.8, */*;q=0.5",
-        "Accept-Encoding": "gzip, deflate"})
+        "Accept-Encoding": "gzip"})
     with urllib.request.urlopen(req, timeout=tiempo) as r:
         datos = r.read(10_000_000)
         enc = (r.headers.get("Content-Encoding") or "").lower()
         if enc == "gzip" or datos[:2] == b"\x1f\x8b":
             datos = gzip.decompress(datos)
         elif enc == "deflate":
-            datos = zlib.decompress(datos, -zlib.MAX_WBITS)
+            try:
+                datos = zlib.decompress(datos)
+            except zlib.error:
+                datos = zlib.decompress(datos, -zlib.MAX_WBITS)
         return datos, r.geturl(), r.headers.get_content_type()
 
 
@@ -758,7 +761,13 @@ def main():
     for f, notas, e in resultados:
         print("  %-38s %s %3d  %s" % (f["nombre"][:38], "OK " if e["ok"] else "MAL", e["leidas"],
                                     (e["canal"] or (e["errores"][-1] if e["errores"] else ""))[:90]))
+        if not e["ok"]:
+            for err in e["errores"]:
+                print("      · " + err[:200])
     secciones, descartes = preparar(config, resultados)
+    print("Titulares descartados:")
+    for d in sorted(descartes, key=lambda d: (d["motivo"], d["fuente"])):
+        print("  [%s] %s — %s" % (d["motivo"], d["titular"][:110], d["fuente"]))
     tiempo = None if a.muestras is not None or not config.get("tiempo") else el_tiempo(config["tiempo"])
     estados = [e for _, _, e in resultados]
     generar_web(config, secciones, estados, descartes, tiempo, a.out)
