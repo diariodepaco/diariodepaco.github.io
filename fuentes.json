@@ -61,9 +61,9 @@
      "feeds": ["wp:https://efe.com|ciencia-y-tecnologia"], "home": "https://efe.com/ciencia-y-tecnologia/"},
     {"nombre": "Eureka (Daniel Marín)", "tipo": "Blog de astronomía y exploración espacial", "seccion": "ciencia", "max": 4,
      "feeds": ["https://danielmarin.naukas.com/feed/"], "home": "https://danielmarin.naukas.com/"},
-    {"nombre": "Europa Press Ciencia", "tipo": "Agencia de noticias, sección de ciencia y espacio", "seccion": "ciencia", "max": 5, "titulo_canal": "ciencia|astronom|espacio|universo", "frescura_dias": 4,
+    {"nombre": "Europa Press Ciencia", "activa": false, "_nota": "Sus canales de ciencia y astronomía no se actualizan, probado de nuevo el 4/11/2026", "tipo": "Agencia de noticias, sección de ciencia y espacio", "seccion": "ciencia", "max": 5, "titulo_canal": "ciencia|astronom|espacio|universo", "frescura_dias": 4,
      "feeds": [], "home": "https://www.europapress.es/ciencia/astronomia/"},
-    {"nombre": "CSIC", "tipo": "Consejo Superior de Investigaciones Científicas, organismo público", "seccion": "ciencia", "max": 3,
+    {"nombre": "CSIC", "activa": false, "_nota": "No responde desde los servidores de GitHub, probado de nuevo el 4/11/2026", "tipo": "Consejo Superior de Investigaciones Científicas, organismo público", "seccion": "ciencia", "max": 3,
      "feeds": ["https://www.csic.es/es/rss.xml", "https://www.csic.es/es/rss/noticias", "https://www.csic.es/rss.xml"], "home": "https://www.csic.es/es/actualidad-del-csic"},
     {"nombre": "Naukas", "tipo": "Divulgación científica escrita por científicos", "seccion": "ciencia", "max": 4,
      "feeds": ["wp:https://naukas.com", "https://naukas.com/feed/"], "home": "https://naukas.com/"},
@@ -74,11 +74,11 @@
      "feeds": ["https://www.labrujulaverde.com/feed"], "home": "https://www.labrujulaverde.com/"},
     {"nombre": "Desperta Ferro", "tipo": "Editorial especializada en historia y arqueología", "seccion": "historia", "max": 4, "sin_filtro_opinion": true,
      "feeds": ["https://www.despertaferro-ediciones.com/feed/"], "home": "https://www.despertaferro-ediciones.com/"},
-    {"nombre": "Historia National Geographic", "tipo": "Revista de historia", "seccion": "historia", "max": 5,
+    {"nombre": "Historia National Geographic", "activa": false, "_nota": "Bloquea las lecturas automáticas (error 403), probado de nuevo el 4/11/2026", "tipo": "Revista de historia", "seccion": "historia", "max": 5,
      "feeds": ["https://historia.nationalgeographic.com.es/feeds/rss.xml", "https://historia.nationalgeographic.com.es/rss"], "home": "https://historia.nationalgeographic.com.es/"},
     {"nombre": "El Museo Canario", "tipo": "Museo de arqueología canaria en Las Palmas de Gran Canaria", "seccion": "historia", "max": 3,
      "feeds": [], "home": "https://www.elmuseocanario.com/"},
-    {"nombre": "Cueva Pintada de Gáldar", "activa": false, "_nota": "Bloquea las lecturas automáticas (error 403)", "tipo": "Museo y Parque Arqueológico de Gáldar (Cabildo de Gran Canaria)", "seccion": "historia", "max": 3,
+    {"nombre": "Cueva Pintada de Gáldar", "activa": false, "_nota": "Bloquea las lecturas automáticas (error 403), probado de nuevo el 4/11/2026", "tipo": "Museo y Parque Arqueológico de Gáldar (Cabildo de Gran Canaria)", "seccion": "historia", "max": 3,
      "feeds": ["wp:https://www.cuevapintada.com", "https://www.cuevapintada.com/feed/"], "home": "https://www.cuevapintada.com/"},
 
     {"nombre": "UD Las Palmas", "tipo": "Web oficial del club", "seccion": "futbol", "max": 6,
@@ -110,7 +110,7 @@
      "feeds": ["https://www.efeeme.com/feed/"], "home": "https://www.efeeme.com/"},
     {"nombre": "Ruta 66", "tipo": "Revista de rock", "seccion": "musica", "max": 5,
      "feeds": ["https://www.ruta66.es/feed/"], "home": "https://www.ruta66.es/"},
-    {"nombre": "Popular 1", "tipo": "Revista de rock", "seccion": "musica", "max": 5,
+    {"nombre": "Popular 1", "activa": false, "_nota": "No tiene canal RSS, probado de nuevo el 4/11/2026", "tipo": "Revista de rock", "seccion": "musica", "max": 5,
      "feeds": ["https://www.popular1.com/?format=feed&type=rss", "https://www.popular1.com/index.php?format=feed&type=rss", "wp:https://www.popular1.com"], "home": "https://www.popular1.com/"}
   ]
 }
