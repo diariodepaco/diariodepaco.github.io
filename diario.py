@@ -840,7 +840,7 @@ def pagina(titulo, activo, cuerpo, config, extra_cab=""):
 <script src="diario.js?v=%(v)s" defer></script>
 </head>
 <body data-gen="%(gen)d">
-<header class="cab">
+<header class="cab" id="arriba">
   <div class="fecha">%(fecha)s</div>
   <h1><a href="index.html">El Diario de Paco</a></h1>
   <div class="lema">Noticias sin titulares cebo, sin anuncios y sin cookies</div>
@@ -860,6 +860,7 @@ def pagina(titulo, activo, cuerpo, config, extra_cab=""):
   <p><a href="fuentes.html">De dónde salen las noticias</a></p>
   <p class="firma">Un regalo de Abián · 4 de noviembre de 2026</p>
 </footer>
+<a href="#arriba" id="subir" class="subir" aria-label="Volver arriba" title="Volver arriba"><svg viewBox="0 0 24 24" width="30" height="30" aria-hidden="true"><path d="M5 15l7-7 7 7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
 </body>
 </html>
 """ % {"titulo": esc(titulo), "v": AHORA.strftime("%Y%m%d%H%M"), "gen": AHORA.timestamp(),

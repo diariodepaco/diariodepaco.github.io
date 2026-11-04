@@ -34,6 +34,20 @@
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', arreglar); else arreglar();
 
+  // Botón de volver arriba: solo cuando ya se ha bajado un buen trozo
+  var subir = document.getElementById('subir'), mirando = false;
+  function botonSubir() {
+    mirando = false;
+    if (subir) subir.className = (window.pageYOffset || document.documentElement.scrollTop) > 700 ? 'subir visible' : 'subir';
+  }
+  window.addEventListener('scroll', function () {
+    if (!mirando) { mirando = true; (window.requestAnimationFrame || setTimeout)(botonSubir, 16); }
+  }, { passive: true });
+  if (subir) subir.addEventListener('click', function (e) {
+    e.preventDefault();
+    try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch (x) { window.scrollTo(0, 0); }
+  });
+
   // Se puede instalar como aplicación (sin tienda ni APK) y se lee sin conexión
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () {}); });
