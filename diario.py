@@ -1065,6 +1065,15 @@ def preparar_lecturas(config, secciones, sin_red=False):
     for f, (total, ok) in sorted(por_fuente.items()):
         if ok < total:
             print("  %-38s %d de %d" % (f[:38], ok, total))
+    if os.environ.get("DIAGNOSTICO_LECTURA"):
+        vistas = set()
+        for n in con_texto:
+            if n["f"] in vistas:
+                continue
+            vistas.add(n["f"])
+            parrafos = [re.sub(r"<[^>]+>", "", x) for x in re.findall(r"(?s)<(?:p|h3|li)>(.*?)</(?:p|h3|li)>", n["leer"])]
+            print("  [%s] %d párrafos | 1º: %s | último: %s" % (n["f"], len(parrafos), parrafos[0][:90] if parrafos else "",
+                                                            parrafos[-1][:90] if parrafos else ""))
     clave = os.environ.get("CLAVE_DIARIO", "").strip()
     if not clave:
         print("  (sin CLAVE_DIARIO: las noticias se abren en la web de cada medio)")
