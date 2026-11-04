@@ -22,6 +22,26 @@ RELLENO = re.compile(r"(?i)^\s*(la entrada .{0,300} (se public[oó]|apareci[oó]
                      r"\[?(…|\.\.\.)\]?$)")
 
 
+RELLENO_CORTO = re.compile(r"(?i)(fuente de la imagen|pie de foto|t[ií]tulo de la imagen|^archivo\s*[-–]|suscrib|newsletter|"
+                           r"bolet[ií]n|descarga (nuestra|la) app|s[ií]guenos|activa las notificaciones|haz clic|pincha aqu[ií]|"
+                           r"lee aqu[ií]|ap[uú]ntate|^foto(grafía)?s?\s*[:|]|^imagen\s*[:|]|^v[ií]deo\s*[:|])")
+ENTRADA = re.compile(r"(?i)^\s*(la entrada|the post|el art[ií]culo) .{0,400} (se public[oó]|apareci[oó]|appeared) (primero )?(en|on)\b")
+
+
+def _partir(texto, objetivo=420):
+    """Un párrafo enorme (p. ej. el «articleBody» de algunos medios) → varios párrafos por frases."""
+    frases = re.split(r"(?<=[.!?»”\"])\s+(?=[A-ZÁÉÍÓÚÑ¿¡«“\"])", texto)
+    grupos, actual = [], ""
+    for f in frases:
+        actual = (actual + " " + f).strip()
+        if len(actual) >= objetivo:
+            grupos.append(actual)
+            actual = ""
+    if actual:
+        grupos.append(actual)
+    return grupos
+
+
 def _esc(t):
     return html.escape(t, quote=False)
 
@@ -127,11 +147,20 @@ def limpiar_html(fuente):
     salida = re.sub(r"<a>(.*?)</a>", r"\1", salida, flags=re.S)
     bloques = re.findall(r"(?s)<(p|h3|ul|ol|blockquote)>(.*?)</\1>", salida)
     limpio, letras = [], 0
-    for tag, dentro in bloques:
+    for k, (tag, dentro) in enumerate(bloques):
         plano = html.unescape(re.sub(r"<[^>]+>", "", dentro)).strip()
-        if not plano or (tag == "p" and len(plano) < 140 and RELLENO.search(plano)):
+        if not plano or ENTRADA.search(plano):
             continue
-        limpio.append("<%s>%s</%s>" % (tag, dentro.strip(), tag))
+        if tag in ("p", "h3") and (
+                (len(plano) < 140 and RELLENO.search(plano)) or (len(plano) < 220 and RELLENO_CORTO.search(plano)) or
+                (len(plano) < 45 and ("|" in plano or plano.endswith(":") and k == 0)) or
+                (len(plano) < 30 and plano.upper() == plano and k < 2)):
+            continue
+        if tag == "p" and len(plano) > 900 and "<" not in dentro:
+            for trozo in _partir(plano):
+                limpio.append("<p>%s</p>" % _esc(trozo))
+        else:
+            limpio.append("<%s>%s</%s>" % (tag, dentro.strip(), tag))
         letras += len(plano)
     return "\n".join(limpio), letras
 

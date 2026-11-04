@@ -1030,7 +1030,7 @@ def preparar_lecturas(config, secciones, sin_red=False):
             n["leer"] = h
         elif n["u"] in cache:
             if cache[n["u"]]["n"] >= 600:
-                n["leer"] = cache[n["u"]]["h"]
+                n["leer"] = lectura.limpiar_html(cache[n["u"]]["h"])[0]  # se vuelve a limpiar con las reglas actuales
         elif not sin_red:
             pendientes.append(n)
 
