@@ -171,6 +171,15 @@ def limpiar_texto(t, maximo=None):
 # Descarga y lectura de canales
 # ----------------------------------------------------------------------------------------------
 CONTEXTOS = {}
+POR_SITIO = {}  # como mucho dos descargas a la vez del mismo medio (si no, alguno corta: «demasiadas peticiones»)
+CERROJO = __import__("threading").Lock()
+
+
+def turno(host):
+    with CERROJO:
+        if host not in POR_SITIO:
+            POR_SITIO[host] = __import__("threading").Semaphore(2)
+        return POR_SITIO[host]
 
 
 def contexto_con_intermedio(host):
@@ -194,7 +203,21 @@ def contexto_con_intermedio(host):
     return ctx
 
 
-def descargar(url, tiempo=25):
+def descargar(url, tiempo=25, reintento=True):
+    host = urllib.parse.urlparse(url).hostname or ""
+    with turno(host):
+        try:
+            return _descargar(url, tiempo)
+        except urllib.error.HTTPError as e:
+            if e.code not in (429, 503) or not reintento:
+                raise
+            espera = e.headers.get("Retry-After", "") if e.headers else ""
+            espera = min(int(espera), 30) if espera.isdigit() else 8
+    __import__("time").sleep(espera)
+    return descargar(url, tiempo, False)
+
+
+def _descargar(url, tiempo=25):
     req = urllib.request.Request(url, headers={
         "User-Agent": UA, "Accept-Language": "es-ES,es;q=0.9",
         "Accept": "application/rss+xml, application/atom+xml, application/xml;q=0.9, text/xml;q=0.9, application/json;q=0.9, text/html;q=0.8, */*;q=0.5",
@@ -446,6 +469,12 @@ def foto_json(d):
     return ""
 
 
+try:
+    CATEGORIAS_WP = json.load(open(os.path.join(AQUI, ".cache", "categorias_wp.json"), encoding="utf-8"))
+except (OSError, ValueError):
+    CATEGORIAS_WP = {}
+
+
 def url_wordpress(espec):
     """«wp:https://medio.com» o «wp:https://medio.com|categoria» → dirección de la API de WordPress."""
     sitio, _, categoria = espec[3:].partition("|")
@@ -453,8 +482,13 @@ def url_wordpress(espec):
     campos = "&_fields=title,link,date_gmt,excerpt,content,jetpack_featured_media_url"
     if not categoria:
         return sitio + "/wp-json/wp/v2/posts?per_page=40" + campos
-    datos, _, _ = descargar(sitio + "/wp-json/wp/v2/categories?slug=" + urllib.parse.quote(categoria) + "&_fields=id")
-    ids = [str(c["id"]) for c in json.loads(datos) if "id" in c]
+    clave_cat = sitio + "|" + categoria
+    ids = CATEGORIAS_WP.get(clave_cat)
+    if not ids:
+        datos, _, _ = descargar(sitio + "/wp-json/wp/v2/categories?slug=" + urllib.parse.quote(categoria) + "&_fields=id")
+        ids = [str(c["id"]) for c in json.loads(datos) if "id" in c]
+        if ids:
+            CATEGORIAS_WP[clave_cat] = ids
     if not ids:
         raise ValueError("no existe la categoría «%s»" % categoria)
     return sitio + "/wp-json/wp/v2/posts?per_page=40&categories=" + ",".join(ids) + campos
@@ -1115,6 +1149,7 @@ def preparar_lecturas(config, secciones, sin_red=False):
                 n["i"] = foto
     os.makedirs(os.path.dirname(CACHE_TEXTOS), exist_ok=True)
     json.dump(cache, open(CACHE_TEXTOS, "w", encoding="utf-8"), ensure_ascii=False)
+    json.dump(CATEGORIAS_WP, open(os.path.join(os.path.dirname(CACHE_TEXTOS), "categorias_wp.json"), "w"))
     # el titular repetido como primer párrafo sobra
     for n in notas:
         if n.get("leer"):
