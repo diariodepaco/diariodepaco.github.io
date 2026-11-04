@@ -39,8 +39,10 @@
     window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () {}); });
   }
   var pendiente = null;
+  var instalada = window.matchMedia && window.matchMedia('(display-mode: standalone)').matches;
   window.addEventListener('beforeinstallprompt', function (e) {
     e.preventDefault();
+    if (instalada) return;  // dentro de la aplicación instalada no se ofrece nunca
     pendiente = e;
     var caja = document.getElementById('instalar');
     if (caja) caja.hidden = false;
