@@ -48,6 +48,12 @@ Los filtros (palabras de cebo, deporte, opinión…) están al principio de `dia
 
 El repositorio tiene que ser **público** para que GitHub Pages sea gratis. No contiene nada privado.
 
+## Leer las noticias dentro del Diario (sin cookies)
+
+Al tocar un titular, la noticia se lee **dentro del Diario**: solo el texto, sin anuncios ni avisos de cookies, con un enlace a la web del medio al final. El texto sale del propio canal del medio (RSS completo, API de WordPress o de RTVE) o, si el canal solo trae un resumen, de la página de la noticia (`lectura.py`).
+
+Esos textos se publican **cifrados** con una clave familiar (secreto `CLAVE_DIARIO` en *Settings › Secrets and variables › Actions*): la web es pública, pero solo los dispositivos que han abierto el enlace con la clave (el del QR, `https://diariodepaco.github.io/#clave=…`) pueden leerlos. Para cualquier otra persona, el Diario solo muestra titulares y enlaza a cada medio. No hay archivo: cada edición lleva solo las noticias de esos días y luego desaparecen. Sin el secreto, todo funciona igual pero las noticias se abren en la web de cada medio.
+
 ## La «app» de la tablet
 
 El Diario se instala desde Chrome como una aplicación más (es una *aplicación web*): se abre https://diariodepaco.github.io en la tablet y se toca **«Instalar El Diario en esta tablet»** (o menú ⋮ de Chrome › **Instalar aplicación** / **Añadir a pantalla de inicio**). Queda un icono en la pantalla de inicio, se abre a pantalla completa, se actualiza sola (no hay que reinstalar nada nunca) y guarda la última edición para leerla sin internet (`web/sw.js`). Las noticias se abren dentro, en una pestaña de Chrome con una X para volver.

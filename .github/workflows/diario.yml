@@ -33,7 +33,19 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Preparar
+        run: pip install --quiet cryptography
+
+      # textos ya sacados de las páginas en ejecuciones anteriores (para no volver a pedirlos)
+      - uses: actions/cache@v6
+        with:
+          path: .cache
+          key: textos-${{ github.run_id }}
+          restore-keys: textos-
+
       - name: Generar el diario
+        env:
+          CLAVE_DIARIO: ${{ secrets.CLAVE_DIARIO }}
         run: python diario.py --out _site
 
       - uses: actions/configure-pages@v6

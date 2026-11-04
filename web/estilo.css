@@ -125,3 +125,20 @@ summary { cursor: pointer; font-weight: 700; padding: 4px 0; }
   transition: opacity .25s, visibility .25s; }
 .subir.visible { opacity: .92; visibility: visible; }
 @media (min-width: 900px) { .subir { right: 28px; bottom: 28px; } }
+
+/* lectura de una noticia dentro del Diario */
+.lectura { padding-top: 10px; }
+.lectura .volver { display: inline-block; margin: 6px 0 10px; font-family: 'Poppins', Arial, sans-serif; font-weight: 700;
+  font-size: 17px; color: var(--azul); text-decoration: none; padding: 6px 12px 6px 0; }
+.lectura .meta { font-family: 'Poppins', Arial, sans-serif; font-weight: 500; font-size: 14px; color: var(--suave); }
+.lectura .medio { color: var(--azul); font-weight: 700; }
+.lectura h1 { font-weight: 600; font-size: 1.55em; line-height: 1.25; margin: 6px 0 14px; color: var(--tinta); }
+.lectura .cuerpo { font-size: 1.05em; line-height: 1.65; }
+.lectura .cuerpo p { margin: 0 0 1em; }
+.lectura .cuerpo h3 { font-size: 1.1em; margin: 1.3em 0 .5em; }
+.lectura .cuerpo blockquote { margin: 1em 0; padding: 4px 0 4px 16px; border-left: 4px solid var(--ambar); color: var(--suave); font-style: italic; }
+.lectura .cuerpo a { color: var(--azul); }
+.lectura .cuerpo ul, .lectura .cuerpo ol { padding-left: 1.3em; }
+.lectura .origen { margin: 18px 0 8px; padding: 12px 14px; background: var(--papel2); border-radius: 10px;
+  font-family: 'Poppins', Arial, sans-serif; font-size: 14.5px; color: var(--suave); line-height: 1.6; }
+.lectura .origen a { color: var(--azul); font-weight: 500; }

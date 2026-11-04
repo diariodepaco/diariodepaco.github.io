@@ -17,6 +17,8 @@ import argparse, concurrent.futures, datetime as dt, email.utils, gzip, html, js
 import ssl, sys, tempfile, unicodedata, urllib.error, urllib.parse, urllib.request, zlib
 import xml.etree.ElementTree as ET
 
+import lectura
+
 try:
     from zoneinfo import ZoneInfo
     TZ = ZoneInfo("Atlantic/Canary")
@@ -797,7 +799,8 @@ def nota_html(n, resumen=True, mostrar_seccion=None):
         meta.append('<span class="de">%s</span>' % esc(mostrar_seccion))
     sello = '<span class="sello">Gáldar</span>' if n["galdar"] else ""
     partes = ['<article class="nota">', '<div class="meta">%s%s</div>' % (" · ".join(meta), sello),
-              '<h3><a href="%s" rel="noopener noreferrer">%s</a></h3>' % (esc(n["u"]), esc(n["t"]))]
+              '<h3><a href="%s" rel="noopener noreferrer"%s>%s</a></h3>' % (
+                  esc(n["u"]), (' data-leer="%s"' % lectura.id_de(n["u"])) if n.get("leer") else "", esc(n["t"]))]
     if resumen and n["r"]:
         partes.append("<p>%s</p>" % esc(n["r"]))
     if n["tambien"]:
@@ -817,10 +820,10 @@ def tiempo_html(t):
                man["min"], man["max"], esc(man["cielo"]), lluvia(man)))
 
 
-def pagina(titulo, activo, cuerpo, config, extra_cab=""):
+def pagina(titulo, activo, cuerpo, config, extra_cab="", script_extra=""):
     hoy = local_dt(AHORA)
     nav = ['<a href="index.html"%s>Portada</a>' % (' aria-current="page"' if activo == "index" else "")]
-    recargar = '<a href="%s.html" class="recargar" title="Actualizar">↻</a>' % activo
+    recargar = '<a href="%s.html" class="recargar" title="Actualizar">↻</a>' % ("index" if activo == "leer" else activo)
     for s in config["secciones"]:
         nav.append('<a href="%s.html"%s>%s</a>' % (s["id"], ' aria-current="page"' if activo == s["id"] else "",
                                                    esc(s.get("corto", s["nombre"]))))
@@ -835,14 +838,14 @@ def pagina(titulo, activo, cuerpo, config, extra_cab=""):
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <meta name="referrer" content="no-referrer">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; connect-src 'none'; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; connect-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="theme-color" content="#1f3a5f">
 <title>%(titulo)s</title>
 <link rel="icon" href="icono.png">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icono-192.png">
 <link rel="stylesheet" href="estilo.css?v=%(v)s">
-<script src="diario.js?v=%(v)s" defer></script>
+<script src="diario.js?v=%(v)s" defer></script>%(extra_js)s
 </head>
 <body data-gen="%(gen)d">
 <header class="cab" id="arriba">
@@ -870,7 +873,8 @@ def pagina(titulo, activo, cuerpo, config, extra_cab=""):
 </html>
 """ % {"titulo": esc(titulo), "v": AHORA.strftime("%Y%m%d%H%M"), "gen": AHORA.timestamp(),
        "fecha": esc(fecha_larga(AHORA).capitalize()), "cumple": cumple, "extra": extra_cab, "nav": "".join(nav),
-       "cuerpo": cuerpo, "act": esc(fecha_larga(AHORA, False)), "hora": local_dt(AHORA).strftime("%H:%M")}
+       "cuerpo": cuerpo, "act": esc(fecha_larga(AHORA, False)),
+       "extra_js": ('\n<script src="%s?v=%s" defer></script>' % (script_extra, AHORA.strftime("%Y%m%d%H%M"))) if script_extra else "", "hora": local_dt(AHORA).strftime("%H:%M")}
 
 
 def escribir(ruta, texto):
@@ -878,7 +882,7 @@ def escribir(ruta, texto):
         fh.write(texto)
 
 
-def generar_web(config, secciones, estados, descartes, tiempo, salida):
+def generar_web(config, secciones, estados, descartes, tiempo, salida, paquete=None):
     if os.path.exists(salida):
         shutil.rmtree(salida)
     os.makedirs(salida)
@@ -936,7 +940,9 @@ def generar_web(config, secciones, estados, descartes, tiempo, salida):
               "Quita los titulares cebo, la publicidad, el deporte, los artículos de opinión y las noticias repetidas, "
               "y ordena el resto por secciones. Cuando varios medios cuentan lo mismo, se muestra una sola vez "
               "y debajo pone quién más lo cuenta.</p>",
-              "<p>Al tocar una noticia se abre en la web del medio que la publicó. Esta página no tiene anuncios, "
+              "<p>Al tocar una noticia se lee aquí mismo, solo el texto: sin anuncios ni avisos de cookies (abajo de cada "
+              "noticia hay un enlace a la web del medio). Si de alguna no se ha podido sacar el texto, se abre en la web "
+              "del medio. Esta página no tiene anuncios, "
               "no usa cookies y no guarda nada de quien la lee.</p>",
               "<p><b>Para tenerlo como aplicación:</b> abre esta página en Chrome y toca «Instalar El Diario en esta "
               "tablet» (o, en el menú ⋮ de Chrome, «Instalar aplicación» o «Añadir a pantalla de inicio»). Queda un icono "
@@ -963,6 +969,11 @@ def generar_web(config, secciones, estados, descartes, tiempo, salida):
     cuerpo.append('<p class="tecnico"><a href="estado.html">Informe técnico</a> · El tiempo: '
                   '<a href="https://open-meteo.com/" rel="noopener noreferrer">Open-Meteo</a></p>')
     escribir(os.path.join(salida, "fuentes.html"), pagina("Fuentes · El Diario de Paco", "fuentes", "\n".join(cuerpo), config, cab))
+    escribir(os.path.join(salida, "leer.html"), pagina(
+        "Noticia · El Diario de Paco", "leer",
+        '<article id="lectura" class="lectura"><p class="vacio">Abriendo la noticia…</p></article>', config, "", "leer.js"))
+    if paquete:
+        json.dump(paquete, open(os.path.join(salida, "lecturas.json"), "w"), separators=(",", ":"))
 
     # Informe técnico (para Abián)
     filas = []
@@ -995,6 +1006,75 @@ def generar_web(config, secciones, estados, descartes, tiempo, salida):
                     "medio": n["f"], "resumen": n["r"], "tambien": [f for f, _ in n["tambien"]]}
                    for n in secciones[s["id"]]["notas"]]} for s in config["secciones"]]},
               open(os.path.join(salida, "noticias.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+
+
+# ----------------------------------------------------------------------------------------------
+# Lectura dentro del Diario (texto cifrado con la clave familiar; ver lectura.py)
+# ----------------------------------------------------------------------------------------------
+CACHE_TEXTOS = os.path.join(AQUI, ".cache", "textos.json")
+
+
+def preparar_lecturas(config, secciones, sin_red=False):
+    notas = [n for s in secciones.values() for n in s["notas"]]
+    nombres = {s["id"]: s["nombre"] for s in config["secciones"]}
+    try:
+        cache = json.load(open(CACHE_TEXTOS, encoding="utf-8"))
+    except (OSError, ValueError):
+        cache = {}
+    limite = AHORA.timestamp() - 12 * 86400
+    cache = {u: v for u, v in cache.items() if v.get("t", 0) > limite}
+    pendientes = []
+    for n in notas:
+        h, letras = lectura.limpiar_html(n.get("x") or "")
+        if letras >= 600:
+            n["leer"] = h
+        elif n["u"] in cache:
+            if cache[n["u"]]["n"] >= 600:
+                n["leer"] = cache[n["u"]]["h"]
+        elif not sin_red:
+            pendientes.append(n)
+
+    def de_la_pagina(n):
+        try:
+            datos, _, tipo = descargar(n["u"], 20)
+            h, letras = lectura.extraer_de_pagina(datos.decode("utf-8", "replace"))
+        except Exception:  # noqa: BLE001
+            h, letras = "", 0
+        return n, h, letras
+    with concurrent.futures.ThreadPoolExecutor(max_workers=6) as ex:
+        for n, h, letras in ex.map(de_la_pagina, pendientes):
+            cache[n["u"]] = {"h": h if letras >= 600 else "", "n": letras, "t": AHORA.timestamp()}
+            if letras >= 600:
+                n["leer"] = h
+    os.makedirs(os.path.dirname(CACHE_TEXTOS), exist_ok=True)
+    json.dump(cache, open(CACHE_TEXTOS, "w", encoding="utf-8"), ensure_ascii=False)
+    # el titular repetido como primer párrafo sobra
+    for n in notas:
+        if n.get("leer"):
+            primero = re.match(r"<p>(.*?)</p>\n?", n["leer"], flags=re.S)
+            if primero and sin_tildes(re.sub(r"<[^>]+>", "", primero.group(1))).strip(" .") == sin_tildes(n["t"]).strip(" ."):
+                n["leer"] = n["leer"][primero.end():]
+    con_texto = [n for n in notas if n.get("leer")]
+    por_fuente = {}
+    for n in notas:
+        a = por_fuente.setdefault(n["f"], [0, 0])
+        a[0] += 1
+        a[1] += 1 if n.get("leer") else 0
+    print("Lectura dentro del Diario: %d de %d noticias (%d sacadas de la página)" % (
+        len(con_texto), len(notas), sum(1 for n in pendientes if n.get("leer"))))
+    for f, (total, ok) in sorted(por_fuente.items()):
+        if ok < total:
+            print("  %-38s %d de %d" % (f[:38], ok, total))
+    clave = os.environ.get("CLAVE_DIARIO", "").strip()
+    if not clave:
+        print("  (sin CLAVE_DIARIO: las noticias se abren en la web de cada medio)")
+        for n in notas:
+            n.pop("leer", None)
+        return None
+    datos = {lectura.id_de(n["u"]): {"t": n["t"], "f": n["f"], "u": n["u"], "s": nombres.get(n["s"], ""),
+                                     "d": n["d"].isoformat() if n["d"] else None, "h": n["leer"],
+                                     "o": [[f, u] for f, u in n["tambien"][:4]]} for n in con_texto}
+    return lectura.cifrar(json.dumps(datos, ensure_ascii=False, separators=(",", ":")).encode("utf-8"), clave)
 
 
 def main():
@@ -1031,7 +1111,8 @@ def main():
         print("  [%s] %s — %s" % (d["motivo"], d["titular"][:110], d["fuente"]))
     tiempo = None if a.muestras is not None or not config.get("tiempo") else el_tiempo(config["tiempo"])
     estados = [e for _, _, e in resultados]
-    generar_web(config, secciones, estados, descartes, tiempo, a.out)
+    paquete = preparar_lecturas(config, secciones, a.muestras is not None)
+    generar_web(config, secciones, estados, descartes, tiempo, a.out, paquete)
     print("Resumen por fuente (válidas tras filtros · publicadas · descartadas):")
     publicadas = {}
     for sec in secciones.values():

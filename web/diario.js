@@ -34,6 +34,20 @@
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', arreglar); else arreglar();
 
+  // Clave familiar para leer las noticias aquí dentro (llega en el enlace del QR: …/#clave=XXXX)
+  var m = /(?:^#|&)clave=([^&]+)/.exec(location.hash || '');
+  if (m) {
+    try { localStorage.setItem('diario_clave', decodeURIComponent(m[1])); } catch (x) {}
+    try { history.replaceState(null, '', location.pathname + location.search); } catch (x) { location.hash = ''; }
+  }
+  function clave() { try { return localStorage.getItem('diario_clave'); } catch (x) { return null; } }
+  document.addEventListener('click', function (e) {
+    var a = e.target && e.target.closest ? e.target.closest('a[data-leer]') : null;
+    if (!a || !clave() || !window.crypto || !window.crypto.subtle) return;
+    e.preventDefault();
+    location.href = 'leer.html#' + a.getAttribute('data-leer');
+  });
+
   // Botón de volver arriba: solo cuando ya se ha bajado un buen trozo
   var subir = document.getElementById('subir'), mirando = false;
   function botonSubir() {
