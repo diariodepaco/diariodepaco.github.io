@@ -86,6 +86,9 @@ OTROS_DEPORTES = re.compile(r"\b(baloncesto|basket|nba|acb|euroliga|eurobasket|d
                             r"atletismo|atleta\w*|maraton|balonmano|waterpolo|natacion|nadador\w*|golf|vela|regata\w*|"
                             r"lucha canaria|luchador\w*|boxeo|ufc|voleibol|voley|rugby|esqui|padel|hockey|"
                             r"juegos olimpicos|olimpiadas|paralimpic\w*|1500 m|100 metros)\b")
+VINO_CANARIO = re.compile(r"\b(canari\w*|gran canaria|tenerife|lanzarote|la palma|el hierro|gomera|fuerteventura|"
+                          r"malvasia|listan|queso de flor|flor de guia|majorero|palmero|herreno|platano de canarias|"
+                          r"monte lentiscal|agaete|berrazales|galdar)\b")
 UD = re.compile(r"\b(ud las palmas|la ud|amarillos|pio pio|estadio de gran canaria|las palmas)\b")
 # Música: nada de reguetón (ni de su primo el trap latino)
 REGUETON = re.compile(r"\b(reggaet\w*|reguet\w*|regaet\w*|perreo|dembow|trap latino|urbano latino|musica urbana|"
@@ -691,6 +694,11 @@ def preparar(config, resultados):
                 p += 5 * 3600
             if sid == "ciencia" and ASTRO.search(texto):
                 p += 30 * 3600
+            if sid == "bodega":
+                if VINO_CANARIO.search(texto):
+                    p += 48 * 3600  # vinos, quesos y frutas de Canarias, arriba
+                elif re.search(r"\b(vino|vinos|bodega\w*|vendimia|rioja|uva|uvas|queso\w*|miel)\b", texto):
+                    p += 24 * 3600
             if sid == "futbol" and es_ud(n):
                 p += 72 * 3600  # la UD Las Palmas, siempre arriba
             return p
