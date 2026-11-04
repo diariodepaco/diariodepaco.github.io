@@ -52,6 +52,8 @@ El repositorio tiene que ser **público** para que GitHub Pages sea gratis. No c
 
 Al tocar un titular, la noticia se lee **dentro del Diario**: solo el texto, sin anuncios ni avisos de cookies. **Nada se abre fuera**: las noticias de las que no se consigue el texto no se publican, y dentro de los textos no hay enlaces a otras webs. El texto sale del propio canal del medio (RSS completo, API de WordPress o de RTVE) o, si el canal solo trae un resumen, de la página de la noticia (`lectura.py`).
 
+Cada noticia lleva su **foto** (la del propio medio: de su canal o de la página), arriba del texto y también en las listas (grande en la primera de cada sección de la portada y pequeña en las demás). Las fotos solo se muestran, no llevan a ninguna parte.
+
 Esos textos se publican **cifrados** con una clave familiar (secreto `CLAVE_DIARIO` en *Settings › Secrets and variables › Actions*): la web es pública, pero solo los dispositivos que han abierto el enlace con la clave (el del QR, `https://diariodepaco.github.io/#clave=…`) pueden leerlos. Para cualquier otra persona, el Diario solo muestra titulares. No hay archivo: cada edición lleva solo las noticias de esos días y luego desaparecen. Sin el secreto, todo funciona igual pero las noticias se abren en la web de cada medio.
 
 ## La «app» de la tablet
