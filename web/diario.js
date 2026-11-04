@@ -118,27 +118,46 @@
       setTimeout(function () { esperarEdicionNueva(antes, inicio); }, 20000);
     }).catch(function () { setTimeout(function () { esperarEdicionNueva(antes, inicio); }, 20000); });
   }
+  function horaDe(ts) { var d = new Date(ts * 1000); return d.getHours() + ':' + ('0' + d.getMinutes()).slice(-2); }
   document.addEventListener('click', function (e) {
     var b = e.target && e.target.closest ? e.target.closest('#actualizar') : null;
     if (!b) return;
+    e.preventDefault();
+    b.classList.add('girando');
     var gen = +document.body.getAttribute('data-gen') || 0, ahora = Date.now() / 1000, ultima = 0;
     try { ultima = +localStorage.getItem('diario_pedida') || 0; } catch (x) {}
-    if (!clave() || ahora - gen < 15 * 60 || ahora - ultima < 10 * 60) return;  // recién hecha: basta con recargar
-    e.preventDefault();
-    window.diarioLecturas().then(function (lista) {
-      var a = lista._actualizar;
-      if (!a || !a.t) { location.reload(); return; }
-      return fetch('https://api.github.com/repos/' + a.r + '/actions/workflows/' + a.w + '/dispatches', {
-        method: 'POST',
-        headers: { 'Authorization': 'Bearer ' + a.t, 'Accept': 'application/vnd.github+json' },
-        body: JSON.stringify({ ref: 'main' })
+    // ¿hay ya una edición más nueva publicada? entonces basta con traerla
+    fetch('index.html?_=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.text(); }).then(function (t) {
+      var m2 = /data-gen="(\d+)"/.exec(t), publicada = m2 ? +m2[1] : gen;
+      if (publicada > gen) { location.reload(); return; }
+      if (ahora - ultima < 10 * 60) {
+        avisar('Ya se están buscando noticias nuevas… en un par de minutos se pondrá al día sola.');
+        esperarEdicionNueva(gen, Date.now());
+        return;
+      }
+      if (ahora - gen < 10 * 60 || !clave()) {
+        b.classList.remove('girando');
+        avisar('Ya tienes las noticias más recientes (de las ' + horaDe(gen) + '). El Diario se renueva solo cada dos horas.');
+        return;
+      }
+      return window.diarioLecturas().then(function (lista) {
+        var a = lista._actualizar;
+        if (!a || !a.t) throw new Error('sin permiso');
+        return fetch('https://api.github.com/repos/' + a.r + '/actions/workflows/' + a.w + '/dispatches', {
+          method: 'POST',
+          headers: { 'Authorization': 'Bearer ' + a.t, 'Accept': 'application/vnd.github+json' },
+          body: JSON.stringify({ ref: 'main' })
+        });
       }).then(function (r) {
         if (!r.ok) throw new Error('GitHub ' + r.status);
         try { localStorage.setItem('diario_pedida', String(Math.floor(Date.now() / 1000))); } catch (x) {}
         avisar('Buscando noticias nuevas… tarda unos tres minutos. Puedes seguir leyendo: la página se pondrá al día sola.');
         esperarEdicionNueva(gen, Date.now());
       });
-    }).catch(function () { location.reload(); });
+    }).catch(function () {
+      b.classList.remove('girando');
+      avisar('Ahora mismo no se pueden pedir noticias nuevas (¿hay internet?). El Diario se renueva solo cada dos horas.');
+    });
   });
 
   // Botón de volver arriba: solo cuando ya se ha bajado un buen trozo

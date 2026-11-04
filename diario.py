@@ -918,7 +918,7 @@ SAL_LECTURAS = [""]  # identifica la edición de lecturas.json (para no descarga
 def pagina(titulo, activo, cuerpo, config, extra_cab="", script_extra=""):
     hoy = local_dt(AHORA)
     nav = ['<a href="index.html"%s>Portada</a>' % (' aria-current="page"' if activo == "index" else "")]
-    recargar = '<a href="%s.html" class="recargar" id="actualizar" title="Actualizar">↻</a>' % ("index" if activo == "leer" else activo)
+    recargar = '<a href="%s.html" class="recargar" id="actualizar" title="Actualizar"><span>↻</span></a>' % ("index" if activo == "leer" else activo)
     for s in config["secciones"]:
         nav.append('<a href="%s.html"%s>%s</a>' % (s["id"], ' aria-current="page"' if activo == s["id"] else "",
                                                    esc(s.get("corto", s["nombre"]))))

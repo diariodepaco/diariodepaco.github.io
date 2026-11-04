@@ -156,3 +156,9 @@ summary { cursor: pointer; font-weight: 700; padding: 4px 0; }
   .nota .miniatura { width: 150px; height: 100px; }
   .nota .foto-grande img { height: 340px; }
 }
+
+/* el ↻ gira mientras busca noticias nuevas */
+@-webkit-keyframes girar { to { -webkit-transform: rotate(360deg); transform: rotate(360deg); } }
+@keyframes girar { to { -webkit-transform: rotate(360deg); transform: rotate(360deg); } }
+.secciones a.recargar span { display: inline-block; }
+.secciones a.recargar.girando span { -webkit-animation: girar 1.2s linear infinite; animation: girar 1.2s linear infinite; }
