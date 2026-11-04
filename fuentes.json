@@ -78,7 +78,7 @@
      "feeds": [], "home": "https://historia.nationalgeographic.com.es/"},
     {"nombre": "El Museo Canario", "tipo": "Museo de arqueología canaria en Las Palmas de Gran Canaria", "seccion": "historia", "max": 3,
      "feeds": [], "home": "https://www.elmuseocanario.com/"},
-    {"nombre": "Cueva Pintada de Gáldar", "tipo": "Museo y Parque Arqueológico de Gáldar (Cabildo de Gran Canaria)", "seccion": "historia", "max": 3,
+    {"nombre": "Cueva Pintada de Gáldar", "activa": false, "_nota": "Bloquea las lecturas automáticas (error 403)", "tipo": "Museo y Parque Arqueológico de Gáldar (Cabildo de Gran Canaria)", "seccion": "historia", "max": 3,
      "feeds": ["wp:https://www.cuevapintada.com", "https://www.cuevapintada.com/feed/"], "home": "https://www.cuevapintada.com/"},
 
     {"nombre": "UD Las Palmas", "tipo": "Web oficial del club", "seccion": "futbol", "max": 6,
