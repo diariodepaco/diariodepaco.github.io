@@ -43,6 +43,10 @@ Criterio: agencias de noticias, medios públicos, medios financiados por sus lec
 
 Los filtros (palabras de cebo, deporte, opinión…) están al principio de `diario.py`.
 
+## Actualización automática
+
+La tarea `.github/workflows/publicar.yml` tiene su horario de GitHub (cada dos horas), pero GitHub a veces no lanza los horarios de un repositorio. Por eso también la lanza **cron-job.org** cada dos horas (un aviso gratuito que llama a la API de GitHub con el permiso `Actualizar Diario`, el mismo que usa el botón ↻ y que está guardado en el secreto `ACTUALIZAR_TOKEN`). Si el permiso caduca, hay que regenerarlo en GitHub y ponerlo en los dos sitios.
+
 ## Puesta en marcha (una sola vez)
 
 1. **Settings › Pages › Build and deployment › Source: GitHub Actions.**

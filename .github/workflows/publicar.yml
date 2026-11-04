@@ -4,7 +4,7 @@ name: Diario de Paco
 
 on:
   schedule:
-    - cron: "*/10 * * * *"   # PRUEBA: cada 10 minutos para comprobar que GitHub lanza el horario (luego, cada dos horas)
+    - cron: "23 1-23/2 * * *"   # cada dos horas (horas impares, a y 23, UTC). Además la lanza cron-job.org (ver README)
   workflow_dispatch:
   push:
     branches: [main]
