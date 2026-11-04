@@ -40,7 +40,7 @@ CEBO = [
     r"\bte (sorprendera|dejara|explicamos|contamos)\b", r"\bviral\b", r"\balucina", r"\bincreible\b", r"\bbrutal\b", r"\bimpactante\b",
     r"\bel truco\b", r"\b(los|las) trucos?\b", r"\bnadie (lo )?esperaba\b", r"\bque (pasa|ocurre|sucede) si\b",
     r"\bcomo (saber|consultar|comprobar|ver online|ver en directo|ver gratis)\b", r"\bdonde ver\b", r"\ba que hora\b",
-    r"\b(chollo|chollos|ofertas?|rebajas|descuentos?|black friday|cyber monday|prime day|cupon)\b", r"\bhoroscopo\b",
+    r"\b(chollo|chollos|rebajas|black friday|cyber monday|prime day|cupones?|codigos? de descuento)\b", r"\b(mejores|las) ofertas\b", r"\bdescuentos? de hasta\b", r"\bhoroscopo\b",
     r"\bpatrocinad", r"\bpublirreportaje\b", r"\bcontenido de marca\b", r"\ben colaboracion con\b", r"\bbranded\b",
     r"^\d+ (cosas|claves|trucos|razones|consejos|motivos|lugares|series|peliculas|alimentos|senales|errores|preguntas)\b",
     r"\btodo lo que (debes|tienes que|necesitas|hay que) saber\b", r"\bminuto a minuto\b", r"^(directo|en directo|ultima hora)\b",
@@ -63,7 +63,7 @@ DEPORTE_TXT = re.compile(
     r"lucha canaria|gol|goles|golazo|fichaje|fichajes|delantero|centrocampista|portero del|entrenador del|seleccionador|"
     r"juegos olimpicos|olimpiadas|paralimpicos|tour de francia|vuelta a espana|giro de italia|ciclista|ciclistas|"
     r"balonmano|waterpolo|medalla de (oro|plata|bronce)|liga f|primera rfef|segunda division|primera division|"
-    r"jornada \d+ de|el partido|partidazo|derbi)\b")
+    r"jornada \d+ de|partidazo|derbi)\b")
 DEPORTE_CAT = re.compile(r"^(deportes?|futbol|baloncesto|motor|tenis|ciclismo|golf|atletismo|balonmano|"
                          r"lucha canaria|formula 1|motogp|polideportivo|ud las palmas|cd tenerife|mas deporte)$")
 OPINION_URL = re.compile(r"/(opinion|opiniones|tribuna|tribunas|columnas?|editorial|editoriales|blogs?/opinion|"
@@ -323,22 +323,38 @@ def cargar_fuente(f, muestras=None):
     intentos = list(f.get("feeds") or [])
     probados = set()
 
-    def probar(url):
+    def probar(url, nivel=0):
         probados.add(url)
         try:
             datos, final, tipo = descargar(url)
         except Exception as e:  # noqa: BLE001
             estado["errores"].append("%s → %s" % (url, str(e)[:120]))
             return None
-        if tipo == "text/html" and b"<rss" not in datos[:3000] and b"<feed" not in datos[:3000]:
-            estado["errores"].append("%s → es una página web, no un canal" % url)
+        cabeza = datos[:4000].lstrip().lower()
+        parece_web = cabeza.startswith(b"<!doctype html") or cabeza.startswith(b"<html")
+        notas = [] if parece_web else [n for n in leer_canal(datos, final) if n["t"].strip() and n["u"].startswith("http")]
+        if notas:
+            estado.update(ok=True, canal=url, leidas=len(notas))
+            return notas
+        if parece_web:
+            pista = re.sub(r"\s+", " ", limpiar_texto(re.sub(r"(?is)<head\b.*?</head>", " ", datos[:20000].decode("utf-8", "replace"))))[:60]
+            estado["errores"].append("%s → es una página web, no un canal (%s · «%s»)" % (url, tipo, pista))
+            # página que enumera los canales del medio (p. ej. «/RSS»): se prueban sus enlaces
+            if nivel == 0 and re.search(r"(?i)rss|feed|sindica", url):
+                pagina = datos[:600_000].decode("utf-8", "replace")
+                enlaces = []
+                for m in re.finditer(r"(?i)href\s*=\s*[\"']([^\"']+)[\"']", pagina):
+                    h = urllib.parse.urljoin(final, html.unescape(m.group(1)))
+                    if re.search(r"(?i)(rss|feed|atom|\.xml)", h) and h not in probados and h not in enlaces and \
+                            not re.search(r"(?i)comment|feedly|feedburner\.google|/add\?|subscribe|netvibes|inoreader", h):
+                        enlaces.append(h)
+                for h in enlaces[:6]:
+                    sub = probar(h, 1)
+                    if sub:
+                        return sub
             return None
-        notas = [n for n in leer_canal(datos, final) if n["t"].strip() and n["u"].startswith("http")]
-        if not notas:
-            estado["errores"].append("%s → canal vacío o ilegible" % url)
-            return None
-        estado.update(ok=True, canal=url, leidas=len(notas))
-        return notas
+        estado["errores"].append("%s → canal vacío o ilegible" % url)
+        return None
 
     for url in intentos:
         notas = probar(url)
@@ -363,7 +379,7 @@ def cargar_fuente(f, muestras=None):
 # ----------------------------------------------------------------------------------------------
 # Selección
 # ----------------------------------------------------------------------------------------------
-def motivo_descarte(n):
+def motivo_descarte(n, filtro_opinion=True):
     t = sin_tildes(n["t"])
     if len(t) < 12:
         return "titular vacío o demasiado corto"
@@ -372,7 +388,7 @@ def motivo_descarte(n):
             return "cebo"
     cats = [sin_tildes(limpiar_texto(c)) for c in n.get("cats") or []]
     ruta = urllib.parse.urlparse(n["u"]).path
-    if OPINION_URL.search(ruta) or any(OPINION_CAT.match(c) for c in cats):
+    if filtro_opinion and (OPINION_URL.search(ruta) or any(OPINION_CAT.match(c) for c in cats)):
         return "opinión o publicidad"
     if DEPORTE_URL.search(ruta) or any(DEPORTE_CAT.match(c) for c in cats) or DEPORTE_TXT.search(t):
         return "deporte"
@@ -428,7 +444,7 @@ def preparar(config, resultados):
                     estado["descartadas"]["otros temas"] = estado["descartadas"].get("otros temas", 0) + 1
                     continue
             n["s"] = sec
-            motivo = motivo_descarte(n)
+            motivo = motivo_descarte(n, not f.get("sin_filtro_opinion"))
             if motivo:
                 estado["descartadas"][motivo] = estado["descartadas"].get(motivo, 0) + 1
                 descartes.append({"motivo": motivo, "fuente": f["nombre"], "titular": n["t"], "url": n["u"]})
