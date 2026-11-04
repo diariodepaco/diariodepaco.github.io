@@ -14,7 +14,7 @@ Qué hace en cada ejecución:
     y un informe técnico (estado.html / estado.json) para ver qué fuentes fallan.
 """
 import argparse, concurrent.futures, datetime as dt, email.utils, gzip, html, json, os, re, shutil
-import sys, unicodedata, urllib.parse, urllib.request, zlib
+import ssl, sys, tempfile, unicodedata, urllib.error, urllib.parse, urllib.request, zlib
 import xml.etree.ElementTree as ET
 
 try:
@@ -24,7 +24,8 @@ except Exception:  # pragma: no cover - sin base de zonas horarias
     TZ = dt.timezone.utc
 
 AQUI = os.path.dirname(os.path.abspath(__file__))
-UA = "Mozilla/5.0 (compatible; DiarioDePaco/1.0; lector RSS personal; +https://ansertoken.github.io/diario-paco/)"
+SITIO = "https://ansertoken.github.io/diario-paco/"
+UA = "Mozilla/5.0 (compatible; DiarioDePaco/1.0; lector RSS personal; +%s)" % SITIO
 AHORA = dt.datetime.now(dt.timezone.utc)
 
 DIAS = ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"]
@@ -66,6 +67,32 @@ DEPORTE_TXT = re.compile(
     r"jornada \d+ de|partidazo|derbi)\b")
 DEPORTE_CAT = re.compile(r"^(deportes?|futbol|baloncesto|motor|tenis|ciclismo|golf|atletismo|balonmano|"
                          r"lucha canaria|formula 1|motogp|polideportivo|ud las palmas|cd tenerife|mas deporte)$")
+# Fútbol: sí entra, en su propia sección (con la UD Las Palmas arriba). El resto de deportes no.
+FUTBOL = re.compile(r"\b(futbol\w*|laliga|la liga|liga f|segunda division|primera division|primera rfef|segunda rfef|"
+                    r"tercera rfef|champions|europa league|conference league|ud las palmas|las palmas|cd tenerife|tenerife|"
+                    r"real madrid|fc barcelona|barca|atletico de madrid|atletico|athletic|sevilla|valencia cf|real betis|betis|"
+                    r"villarreal|real sociedad|osasuna|rayo vallecano|getafe|celta|espanyol|mallorca|girona|alaves|leganes|"
+                    r"deportivo|racing|sporting|zaragoza|eibar|mirandes|huesca|elche|levante|granada|cadiz|almeria|malaga|"
+                    r"gol|goles|golazo|fichaje\w*|delantero\w*|centrocampista\w*|portero\w*|defensa central|lateral|"
+                    r"entrenador\w*|tecnico amarillo|amarillos|pio pio|estadio de gran canaria|heliodoro|bernabeu|"
+                    r"camp nou|metropolitano|seleccion espanola|la roja|seleccionador|mundial\w*|eurocopa|copa del rey|"
+                    r"supercopa|uefa|fifa|rfef|penalti\w*|var|arbitr\w*|jornada|clasificacion|ascenso|descenso|"
+                    r"partido|partidos|once inicial|vestuario|cantera|jesus de miguel)\b")
+OTROS_DEPORTES = re.compile(r"\b(baloncesto|basket|nba|acb|euroliga|eurobasket|dreamland|cb gran canaria|"
+                            r"la laguna tenerife|tenis|tenista\w*|nadal|alcaraz|djokovic|roland garros|wimbledon|"
+                            r"open de australia|us open|copa davis|formula 1|formula uno|f1|motogp|grand prix|"
+                            r"gran premio|piloto\w*|ciclismo|ciclista\w*|tour de francia|vuelta a espana|giro de italia|"
+                            r"atletismo|atleta\w*|maraton|balonmano|waterpolo|natacion|nadador\w*|golf|vela|regata\w*|"
+                            r"lucha canaria|luchador\w*|boxeo|ufc|voleibol|voley|rugby|esqui|padel|hockey|"
+                            r"juegos olimpicos|olimpiadas|paralimpic\w*|1500 m|100 metros)\b")
+UD = re.compile(r"\b(ud las palmas|la ud|amarillos|pio pio|estadio de gran canaria|las palmas)\b")
+# Música: nada de reguetón (ni de su primo el trap latino)
+REGUETON = re.compile(r"\b(reggaet\w*|reguet\w*|regaet\w*|perreo|dembow|trap latino|urbano latino|musica urbana|"
+                      r"bad bunny|j balvin|maluma|karol g|ozuna|daddy yankee|anuel|rauw alejandro|feid|myke towers|"
+                      r"nicky jam|sech|jhayco|jhay cortez|arcangel|young miko|peso pluma|bizarrap|bzrp|becky g|anitta|"
+                      r"don omar|wisin|yandel|farruko|lunay|eladio carrion|natanael cano|tokischa|el alfa|bad gyal|"
+                      r"daddy|nathy peluso|cazzu|tini|emilia mernes|duki|bresh|omar montes|rels b|morad|beny jr|"
+                      r"saiko|myke|lola indigo|aitana ocana)\b|(?<!francisco de )\bquevedo\b")
 OPINION_URL = re.compile(r"/(opinion|opiniones|tribuna|tribunas|columnas?|editorial|editoriales|blogs?/opinion|"
                          r"cartas-al-director|humor|vinetas?)(/|-|$)", re.I)
 OPINION_CAT = re.compile(r"^(opinion|opiniones|tribuna|columna|columnas|editorial|cartas al director|vineta|humor|"
@@ -133,12 +160,43 @@ def limpiar_texto(t, maximo=None):
 # ----------------------------------------------------------------------------------------------
 # Descarga y lectura de canales
 # ----------------------------------------------------------------------------------------------
+CONTEXTOS = {}
+
+
+def contexto_con_intermedio(host):
+    """Algunas webs no envían el certificado intermedio. Los navegadores lo descargan de la dirección que
+    indica el propio certificado (AIA); aquí se hace lo mismo y se verifica la cadena completa con normalidad."""
+    if host in CONTEXTOS:
+        return CONTEXTOS[host]
+    pem = ssl.get_server_certificate((host, 443), timeout=15)
+    with tempfile.NamedTemporaryFile("w", suffix=".pem", delete=False) as fh:
+        fh.write(pem)
+    try:
+        info = ssl._ssl._test_decode_cert(fh.name)  # noqa: SLF001 - lector de certificados de la propia biblioteca
+    finally:
+        os.unlink(fh.name)
+    ctx = ssl.create_default_context()
+    for u in info.get("caIssuers", ()):
+        with urllib.request.urlopen(urllib.request.Request(u, headers={"User-Agent": UA}), timeout=15) as r:
+            der = r.read(200_000)
+        ctx.load_verify_locations(cadata=der.decode() if der.startswith(b"-----") else ssl.DER_cert_to_PEM_cert(der))
+    CONTEXTOS[host] = ctx
+    return ctx
+
+
 def descargar(url, tiempo=25):
     req = urllib.request.Request(url, headers={
         "User-Agent": UA, "Accept-Language": "es-ES,es;q=0.9",
-        "Accept": "application/rss+xml, application/atom+xml, application/xml;q=0.9, text/xml;q=0.9, text/html;q=0.8, */*;q=0.5",
+        "Accept": "application/rss+xml, application/atom+xml, application/xml;q=0.9, text/xml;q=0.9, application/json;q=0.9, text/html;q=0.8, */*;q=0.5",
         "Accept-Encoding": "gzip"})
-    with urllib.request.urlopen(req, timeout=tiempo) as r:
+    host = urllib.parse.urlparse(url).hostname
+    try:
+        r = urllib.request.urlopen(req, timeout=tiempo, context=CONTEXTOS.get(host))
+    except urllib.error.URLError as e:
+        if "CERTIFICATE_VERIFY_FAILED" not in str(e) or "local issuer" not in str(e):
+            raise
+        r = urllib.request.urlopen(req, timeout=tiempo, context=contexto_con_intermedio(host))
+    with r:
         datos = r.read(10_000_000)
         enc = (r.headers.get("Content-Encoding") or "").lower()
         if enc == "gzip" or datos[:2] == b"\x1f\x8b":
@@ -258,6 +316,69 @@ def leer_canal(datos, base=""):
     return notas[:80]
 
 
+def leer_json(datos, base=""):
+    """Noticias en JSON: la API de WordPress (/wp-json/wp/v2/posts) y otras con lista de artículos."""
+    try:
+        j = json.loads(datos.decode("utf-8", "replace"))
+    except ValueError:
+        return []
+
+    def valor(d, *claves):
+        for k in claves:
+            v = d.get(k)
+            if isinstance(v, dict):
+                v = v.get("rendered") or v.get("text") or v.get("value")
+            if isinstance(v, str) and v.strip():
+                return v
+        return ""
+
+    def listas(x, prof=0):
+        if prof > 4:
+            return
+        if isinstance(x, list) and x and all(isinstance(e, dict) for e in x[:5]):
+            yield x
+        if isinstance(x, dict):
+            for v in x.values():
+                yield from listas(v, prof + 1)
+        elif isinstance(x, list):
+            for v in x[:3]:
+                yield from listas(v, prof + 1)
+
+    for lista in listas(j):
+        notas = []
+        for d in lista[:80]:
+            t = valor(d, "title", "titulo", "headline", "name", "longTitle")
+            u = valor(d, "link", "url", "htmlUrl", "permalink", "uri", "href")
+            if not t or not u:
+                continue
+            f = valor(d, "date_gmt", "publicationDate", "pubDate", "fecha", "published", "date", "datePublished")
+            if f and re.match(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$", f) and d.get("date_gmt"):
+                f += "Z"
+            m = re.match(r"(\d{2})-(\d{2})-(\d{4}) (\d{2}:\d{2}(:\d{2})?)$", f or "")  # 04-11-2026 08:00:00 (RTVE)
+            if m:
+                f = "%s-%s-%sT%s" % (m.group(3), m.group(2), m.group(1), m.group(4))
+            notas.append({"t": t, "u": urllib.parse.urljoin(base, u), "d": fecha_de(f),
+                          "r": valor(d, "excerpt", "summary", "description", "entradilla", "resumen", "subtitle"),
+                          "cats": []})
+        if len(notas) >= 3:
+            return notas
+    return []
+
+
+def url_wordpress(espec):
+    """«wp:https://medio.com» o «wp:https://medio.com|categoria» → dirección de la API de WordPress."""
+    sitio, _, categoria = espec[3:].partition("|")
+    sitio = sitio.rstrip("/")
+    campos = "&_fields=title,link,date_gmt,excerpt"
+    if not categoria:
+        return sitio + "/wp-json/wp/v2/posts?per_page=40" + campos
+    datos, _, _ = descargar(sitio + "/wp-json/wp/v2/categories?slug=" + urllib.parse.quote(categoria) + "&_fields=id")
+    ids = [str(c["id"]) for c in json.loads(datos) if "id" in c]
+    if not ids:
+        raise ValueError("no existe la categoría «%s»" % categoria)
+    return sitio + "/wp-json/wp/v2/posts?per_page=40&categories=" + ",".join(ids) + campos
+
+
 def titulo_canal(datos):
     m = re.search(rb"(?is)<(?:channel|feed)\b.*?<title[^>]*>(.*?)</title>", datos[:20000])
     if not m:
@@ -326,7 +447,8 @@ def cargar_fuente(f, muestras=None):
         if not os.path.exists(ruta):
             estado["errores"].append("sin muestra " + os.path.basename(ruta))
             return f, [], estado
-        notas = leer_canal(open(ruta, "rb").read(), f.get("home", ""))
+        crudo = open(ruta, "rb").read()
+        notas = leer_json(crudo) if crudo.lstrip()[:1] in (b"[", b"{") else leer_canal(crudo, f.get("home", ""))
         estado.update(ok=bool(notas), canal="muestra:" + os.path.basename(ruta), leidas=len(notas))
         return f, notas, estado
     intentos = list(f.get("feeds") or [])
@@ -335,13 +457,17 @@ def cargar_fuente(f, muestras=None):
     def probar(url, nivel=0):
         probados.add(url)
         try:
-            datos, final, tipo = descargar(url)
+            real = url_wordpress(url) if url.startswith("wp:") else url
+            datos, final, tipo = descargar(real)
         except Exception as e:  # noqa: BLE001
             estado["errores"].append("%s → %s" % (url, str(e)[:120]))
             return None
         cabeza = datos[:4000].lstrip().lower()
         parece_web = cabeza.startswith(b"<!doctype html") or cabeza.startswith(b"<html")
-        notas = [] if parece_web else [n for n in leer_canal(datos, final) if n["t"].strip() and n["u"].startswith("http")]
+        if cabeza[:1] in (b"[", b"{"):
+            notas = [n for n in leer_json(datos, final) if n["t"].strip() and n["u"].startswith("http")]
+        else:
+            notas = [] if parece_web else [n for n in leer_canal(datos, final) if n["t"].strip() and n["u"].startswith("http")]
         if notas:
             titulo = titulo_canal(datos)
             exigido = f.get("titulo_canal")
@@ -374,7 +500,8 @@ def cargar_fuente(f, muestras=None):
                     if sub:
                         return sub
             return None
-        estado["errores"].append("%s → canal vacío o ilegible" % url)
+        estado["errores"].append("%s → canal vacío o ilegible (%s · «%s»)" % (
+            url, tipo, re.sub(r"\s+", " ", datos[:90].decode("utf-8", "replace"))))
         return None
 
     if f.get("unir"):
@@ -425,6 +552,8 @@ def motivo_descarte(n, filtro_opinion=True):
         return "opinión o publicidad"
     if DEPORTE_URL.search(ruta) or any(DEPORTE_CAT.match(c) for c in cats) or DEPORTE_TXT.search(t):
         return "deporte"
+    if n.get("s") == "musica" and (REGUETON.search(t) or REGUETON.search(sin_tildes(n.get("r", "")[:300]))):
+        return "reguetón"
     if re.search(r"(?i)/(directo|en-directo|live)(/|-|$)|-directo-|-en-directo", ruta):
         return "cebo"
     if t.upper() == t and len(t) > 25 and re.search(r"[a-z]", sin_tildes(n["t"]).lower()) and n["t"] == n["t"].upper():
@@ -478,6 +607,15 @@ def preparar(config, resultados):
                     continue
             n["s"] = sec
             motivo = motivo_descarte(n, not f.get("sin_filtro_opinion"))
+            if (motivo == "deporte" or sec == "futbol") and "futbol" in secciones:
+                # el fútbol va a su sección; el resto de deportes, fuera
+                texto = sin_tildes(n["t"] + " " + n["r"][:200])
+                if len(FUTBOL.findall(texto)) > len(OTROS_DEPORTES.findall(texto)) or \
+                        (sec == "futbol" and not OTROS_DEPORTES.search(texto)):
+                    n["s"] = sec = "futbol"
+                    motivo = None if motivo in (None, "deporte") else motivo
+                elif motivo == "deporte" or sec == "futbol":
+                    motivo = "deporte (no fútbol)"
             if motivo:
                 estado["descartadas"][motivo] = estado["descartadas"].get(motivo, 0) + 1
                 descartes.append({"motivo": motivo, "fuente": f["nombre"], "titular": n["t"], "url": n["u"]})
@@ -520,6 +658,8 @@ def preparar(config, resultados):
                 p += 5 * 3600
             if sid == "ciencia" and ASTRO.search(texto):
                 p += 30 * 3600
+            if sid == "futbol" and UD.search(texto):
+                p += 72 * 3600  # la UD Las Palmas, siempre arriba
             return p
         dentro.sort(key=puntos, reverse=True)
         por_fuente, final = {}, []
@@ -530,7 +670,8 @@ def preparar(config, resultados):
             final.append(n)
             if len(final) >= sec.get("max", 20):
                 break
-        final.sort(key=lambda n: (n["d"] or AHORA - dt.timedelta(hours=12)), reverse=True)
+        final.sort(key=lambda n: (sid == "futbol" and bool(UD.search(sin_tildes(n["t"] + " " + n["r"]))),
+                                  n["d"] or AHORA - dt.timedelta(hours=12)), reverse=True)
         sec["notas"] = final
     return secciones, descartes
 
