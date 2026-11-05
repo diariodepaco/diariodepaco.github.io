@@ -306,6 +306,7 @@ def xml_a_arbol(datos):
 
 
 FOTO_MALA = re.compile(r"(?i)pixel|1x1|spacer|blank\.|gravatar|feedburner|/emoji/|logo|avatar|icon|\.svg(\?|$)|data:|"
+                       r"comilla|quote|cita\.|firma|autor|author|perfil|profile|placeholder|"
                        r"doubleclick|/ads?/|banner|placeholder")
 
 
@@ -319,33 +320,43 @@ def foto_valida(u, base=""):
     return u if u.startswith("https://") and not FOTO_MALA.search(u) else ""
 
 
-def foto_en_html(t, base=""):
-    """Primera imagen de verdad dentro de un trozo de HTML."""
+def fotos_en_html(t, base=""):
+    """Imágenes de verdad dentro de un trozo de HTML (se saltan las pequeñas declaradas)."""
+    out = []
     for m in re.finditer(r"(?is)<img\b[^>]*>", t or ""):
         etiqueta = m.group(0)
         anchura = re.search(r"(?i)\bwidth=[\"']?(\d+)", etiqueta)
-        if anchura and int(anchura.group(1)) < 200:
+        if anchura and int(anchura.group(1)) < 400:
             continue
-        src = re.search(r"(?i)\b(?:data-src|src)=[\"']([^\"']+)", etiqueta)
-        if src and foto_valida(src.group(1), base):
-            return foto_valida(src.group(1), base)
-    return ""
+        for attr in ("data-src", "data-lazy-src", "src"):
+            src = re.search(r"(?i)\b%s=[\"']([^\"']+)" % attr, etiqueta)
+            if src and foto_valida(src.group(1), base):
+                out.append(foto_valida(src.group(1), base))
+                break
+    return out
 
 
-def foto_de_item(el, contenido, base=""):
-    """Foto de un artículo de RSS/Atom: media:content, media:thumbnail, enclosure o la primera <img> del texto."""
+def foto_en_html(t, base=""):
+    fotos = fotos_en_html(t, base)
+    return fotos[0] if fotos else ""
+
+
+def fotos_de_item(el, contenido, base=""):
+    """Fotos de un artículo de RSS/Atom: media:content, media:thumbnail, enclosure y las <img> del texto."""
+    grandes, pequenas = [], []
     for c in el.iter():
         nombre = local(c.tag)
-        if nombre in ("content", "thumbnail") and c.get("url") and \
-                (c.get("medium") in (None, "image") and (c.get("type") or "image").startswith("image")):
-            f = foto_valida(c.get("url"), base)
-            if f:
-                return f
-        if nombre in ("enclosure", "link") and (c.get("type") or "").startswith("image") and (c.get("url") or c.get("href")):
-            f = foto_valida(c.get("url") or c.get("href"), base)
-            if f:
-                return f
-    return foto_en_html(contenido, base)
+        url = c.get("url") or c.get("href")
+        if not url:
+            continue
+        es_imagen = (nombre in ("content", "thumbnail") and c.get("medium") in (None, "image") and
+                     (c.get("type") or "image").startswith("image")) or \
+                    (nombre in ("enclosure", "link") and (c.get("type") or "").startswith("image"))
+        f = foto_valida(url, base) if es_imagen else ""
+        if f:
+            ancho = c.get("width") or ""
+            (pequenas if nombre == "thumbnail" or (ancho.isdigit() and int(ancho) < 500) else grandes).append(f)
+    return grandes + fotos_en_html(contenido, base) + pequenas
 
 
 def leer_canal(datos, base=""):
@@ -368,7 +379,7 @@ def leer_canal(datos, base=""):
             notas.append({"t": texto_de(hijo(e, "title")), "u": enlace,
                           "d": fecha_de(texto_de(hijo(e, "published")) or texto_de(hijo(e, "updated"))),
                           "r": resumen, "cats": cats, "x": texto_de(hijo(e, "content")),
-                          "i": foto_de_item(e, texto_de(hijo(e, "content")) or resumen, enlace)})
+                          "fotos": fotos_de_item(e, texto_de(hijo(e, "content")) or resumen, enlace)})
     else:
         for it in raiz.iter():
             if local(it.tag) != "item":
@@ -391,7 +402,7 @@ def leer_canal(datos, base=""):
             desc = texto_de(hijo(it, "description"))
             notas.append({"t": texto_de(hijo(it, "title")), "u": enlace, "d": fecha, "r": resumen, "cats": cats,
                           "x": completo if len(completo) > len(desc) else desc,
-                          "i": foto_de_item(it, completo + " " + desc, enlace)})
+                          "fotos": fotos_de_item(it, completo + " " + desc, enlace)})
     for n in notas:
         n["u"] = urllib.parse.urljoin(base, n["u"].strip()) if n["u"] else ""
     return notas[:80]
@@ -449,8 +460,8 @@ def leer_json(datos, base=""):
             notas.append({"t": t, "u": urllib.parse.urljoin(base, u), "d": fecha_de(f),
                           "r": valor(d, "excerpt", "summary", "description", "entradilla", "resumen", "subtitle"),
                           "x": valor(d, "content", "body", "text", "texto", "contenido", "cuerpo"),
-                          "i": foto_valida(foto_json(d), base) or
-                               foto_en_html(valor(d, "content", "body", "text"), base),
+                          "fotos": [f for f in [foto_valida(foto_json(d), base)] if f] +
+                                   fotos_en_html(valor(d, "content", "body", "text"), base),
                           "cats": cats, "_crudo": {k: (str(v)[:60]) for k, v in list(d.items())[:25]}})
         if len(notas) >= 3:
             return notas
@@ -1101,6 +1112,112 @@ def generar_web(config, secciones, estados, descartes, tiempo, salida, paquete=N
 
 
 # ----------------------------------------------------------------------------------------------
+# Fotos: se mide cada candidata (solo los primeros KB del archivo) y se elige una grande de verdad
+# ----------------------------------------------------------------------------------------------
+CACHE_FOTOS = os.path.join(AQUI, ".cache", "fotos.json")
+
+
+def medidas_imagen(b):
+    """(ancho, alto) a partir de los primeros bytes de un JPEG, PNG, GIF o WebP; None si no se sabe."""
+    import struct
+    if b[:8] == b"\x89PNG\r\n\x1a\n" and len(b) >= 24:
+        return struct.unpack(">II", b[16:24])
+    if b[:6] in (b"GIF87a", b"GIF89a"):
+        return struct.unpack("<HH", b[6:10])
+    if b[:4] == b"RIFF" and b[8:12] == b"WEBP":
+        tipo = b[12:16]
+        if tipo == b"VP8 " and len(b) >= 30:
+            w, h = struct.unpack("<HH", b[26:30])
+            return w & 0x3FFF, h & 0x3FFF
+        if tipo == b"VP8L" and len(b) >= 25:
+            v = int.from_bytes(b[21:25], "little")
+            return (v & 0x3FFF) + 1, ((v >> 14) & 0x3FFF) + 1
+        if tipo == b"VP8X" and len(b) >= 30:
+            return int.from_bytes(b[24:27], "little") + 1, int.from_bytes(b[27:30], "little") + 1
+    if b[:2] == b"\xff\xd8":
+        i = 2
+        while i + 9 < len(b):
+            if b[i] != 0xFF:
+                i += 1
+                continue
+            marca = b[i + 1]
+            if marca in (0xD8, 0x01) or 0xD0 <= marca <= 0xD7:
+                i += 2
+                continue
+            largo = struct.unpack(">H", b[i + 2:i + 4])[0]
+            if 0xC0 <= marca <= 0xCF and marca not in (0xC4, 0xC8, 0xCC):
+                h, w = struct.unpack(">HH", b[i + 5:i + 9])
+                return w, h
+            i += 2 + largo
+    return None
+
+
+def medir_foto(url):
+    try:
+        req = urllib.request.Request(url, headers={"User-Agent": UA, "Range": "bytes=0-196607", "Accept": "image/*"})
+        host = urllib.parse.urlparse(url).hostname or ""
+        with turno(host):
+            with urllib.request.urlopen(req, timeout=15) as r:
+                if not (r.headers.get_content_type() or "").startswith("image/"):
+                    return [0, 0]
+                m = medidas_imagen(r.read(196608))
+        return list(m) if m else [0, 0]
+    except Exception:  # noqa: BLE001
+        return [0, 0]
+
+
+def variantes(url):
+    """Si es una miniatura de WordPress (foto-300x200.jpg), primero la original (foto.jpg)."""
+    original = re.sub(r"-\d{2,4}x\d{2,4}(?=\.(?:jpe?g|png|webp)(?:\?|$))", "", url, flags=re.I)
+    return [original, url] if original != url else [url]
+
+
+def elegir_fotos(notas, sin_red=False):
+    try:
+        medidas = json.load(open(CACHE_FOTOS, encoding="utf-8"))
+    except (OSError, ValueError):
+        medidas = {}
+    limite = AHORA.timestamp() - 20 * 86400
+    medidas = {u: v for u, v in medidas.items() if v[2] > limite}
+    candidatas = {}
+    for n in notas:
+        lista = []
+        for f in (n.get("fotos_pagina") or []) + (n.get("fotos") or []):
+            for v in variantes(f):
+                if v not in lista and not FOTO_MALA.search(v):
+                    lista.append(v)
+        candidatas[id(n)] = lista[:5]
+    if not sin_red:
+        por_medir = sorted({u for l in candidatas.values() for u in l if u not in medidas})
+        with concurrent.futures.ThreadPoolExecutor(max_workers=8) as ex:
+            for u, m in zip(por_medir, ex.map(medir_foto, por_medir)):
+                medidas[u] = m + [AHORA.timestamp()]
+        os.makedirs(os.path.dirname(CACHE_FOTOS), exist_ok=True)
+        json.dump(medidas, open(CACHE_FOTOS, "w"))
+    grandes = pequenas = 0
+    for n in notas:
+        mejor = ""
+        reserva = (0, "")
+        for u in candidatas[id(n)]:
+            w, h = (medidas.get(u) or [0, 0, 0])[:2]
+            if sin_red and not w:
+                mejor = mejor or u  # sin internet (pruebas) no se puede medir
+                continue
+            if w >= 640 and h >= 300 and 0.6 <= w / max(h, 1) <= 3.2:
+                mejor = u
+                break
+            if w >= 420 and h >= 240 and w > reserva[0]:
+                reserva = (w, u)
+        n["i"] = mejor or reserva[1]
+        if mejor:
+            grandes += 1
+        elif reserva[1]:
+            pequenas += 1
+    print("  Fotos: %d grandes, %d medianas, %d noticias sin foto (las pequeñas o raras no se usan)" % (
+        grandes, pequenas, len(notas) - grandes - pequenas))
+
+
+# ----------------------------------------------------------------------------------------------
 # Lectura dentro del Diario (texto cifrado con la clave familiar; ver lectura.py)
 # ----------------------------------------------------------------------------------------------
 CACHE_TEXTOS = os.path.join(AQUI, ".cache", "textos.json")
@@ -1121,32 +1238,31 @@ def preparar_lecturas(config, secciones, sin_red=False):
         if letras >= 600:
             n["leer"] = h
         guardado = cache.get(n["u"])
-        if guardado:
+        if guardado and guardado.get("v") == 2:
             if not n.get("leer") and guardado["n"] >= 400:
                 n["leer"] = lectura.limpiar_html(guardado["h"])[0]  # se vuelve a limpiar con las reglas actuales
-            if not n.get("i") and guardado.get("i"):
-                n["i"] = guardado["i"]
-            if "i" not in guardado and not n.get("i") and not sin_red:
-                pendientes.append(n)  # entrada antigua de la caché, sin mirar la foto
-        elif not sin_red and (not n.get("leer") or not n.get("i")):
+            n["fotos_pagina"] = guardado.get("fp", [])
+        elif not sin_red:
             pendientes.append(n)
 
     def de_la_pagina(n):
         try:
             datos, final, tipo = descargar(n["u"], 20)
             pagina = datos.decode("utf-8", "replace")
-            h, letras = lectura.extraer_de_pagina(pagina)
-            foto = foto_valida(lectura.foto_de_pagina(pagina), final)
+            h, letras = (lectura.extraer_de_pagina(pagina) if not n.get("leer") else ("", 0))
+            fotos = [f for f in (foto_valida(x, final) for x in lectura.fotos_de_pagina(pagina)) if f]
         except Exception:  # noqa: BLE001
-            h, letras, foto = "", 0, ""
-        return n, h, letras, foto
+            h, letras, fotos = "", 0, []
+        return n, h, letras, fotos
     with concurrent.futures.ThreadPoolExecutor(max_workers=6) as ex:
-        for n, h, letras, foto in ex.map(de_la_pagina, pendientes):
-            cache[n["u"]] = {"h": h if letras >= 400 else "", "n": letras, "i": foto, "t": AHORA.timestamp()}
+        for n, h, letras, fotos in ex.map(de_la_pagina, pendientes):
+            antes = cache.get(n["u"], {})
+            if not h and antes.get("n", 0) >= 400:
+                h, letras = antes["h"], antes["n"]
+            cache[n["u"]] = {"h": h if letras >= 400 else "", "n": letras, "fp": fotos, "v": 2, "t": AHORA.timestamp()}
             if not n.get("leer") and letras >= 400:
                 n["leer"] = h
-            if not n.get("i") and foto:
-                n["i"] = foto
+            n["fotos_pagina"] = fotos
     os.makedirs(os.path.dirname(CACHE_TEXTOS), exist_ok=True)
     json.dump(cache, open(CACHE_TEXTOS, "w", encoding="utf-8"), ensure_ascii=False)
     json.dump(CATEGORIAS_WP, open(os.path.join(os.path.dirname(CACHE_TEXTOS), "categorias_wp.json"), "w"))
@@ -1160,6 +1276,7 @@ def preparar_lecturas(config, secciones, sin_red=False):
         if n.get("leer"):
             n["leer"] = re.sub(r"(?s)<a\b[^>]*>(.*?)</a>", r"\1", n["leer"])
     con_texto = [n for n in notas if n.get("leer")]
+    elegir_fotos(con_texto, sin_red)
     por_fuente = {}
     for n in notas:
         a = por_fuente.setdefault(n["f"], [0, 0])
