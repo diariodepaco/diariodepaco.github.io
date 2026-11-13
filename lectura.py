@@ -26,6 +26,22 @@ RELLENO_CORTO = re.compile(r"(?i)(fuente de la imagen|pie de foto|t[ií]tulo de 
                            r"bolet[ií]n|descarga (nuestra|la) app|s[ií]guenos|activa las notificaciones|haz clic|pincha aqu[ií]|"
                            r"lee aqu[ií]|lee otras|otras noticias|ap[uú]ntate|seguirnos|s[ií]guenos|canal de whatsapp|^foto(grafía)?s?\s*[:|]|^imagen\s*[:|]|^v[ií]deo\s*[:|])")
 MAQUETA = re.compile(r"\{\{[^{}]{0,80}\}\}|\[\s*EN PENDIENTE\s*\]")
+# párrafos en inglés dentro de una noticia en castellano (Maldita.es mete las dos versiones en la misma página)
+_EN = re.compile(r"\b(the|and|of|to|your|you|our|we|they|these|those|this|that|what|which|who|how|why|is|are|was|were|"
+                 r"have|has|had|will|would|could|should|can|with|from|for|about|than|after|before|into|its|their|"
+                 r"been|be|not|but|or|at|by|on|in|it|per|cent|says|said)\b", re.I)
+_ES = re.compile(r"\b(el|la|los|las|de|del|en|y|que|con|por|para|un|una|se|su|sus|es|al|lo|como|m[aá]s|pero|"
+                 r"sobre|entre|desde|tras|ha|han|son|fue|est[aá]|este|sin|ya|muy|tambi[eé]n|seg[uú]n)\b", re.I)
+
+
+def es_ingles(t):
+    # un párrafo con tildes o ñ es castellano aunque cite discos o grupos en inglés
+    if re.search(r"[áéíóúñÁÉÍÓÚÑ¿¡]", t):
+        return False
+    en, es = len(_EN.findall(t)), len(_ES.findall(t))
+    return en >= 4 and en > 3 * es
+
+
 ENTRADA = re.compile(r"(?i)^\s*(la entrada|the post|el art[ií]culo) .{0,400} (se public[oó]|apareci[oó]|appeared|fue escrita|fue publicad[oa]) (primero )?(en|on)\b")
 
 
@@ -174,6 +190,13 @@ def limpiar_html(fuente):
         else:
             limpio.append("<%s>%s</%s>" % (tag, dentro.strip(), tag))
         letras += len(plano)
+    # si la noticia está sobre todo en castellano, fuera los párrafos en inglés (y al revés no se toca nada)
+    planos = [re.sub(r"\s+", " ", html.unescape(re.sub(r"<[^>]+>", " ", x))).strip() for x in limpio]
+    ingles = [es_ingles(x) for x in planos]
+    letras_es = sum(len(x) for x, i in zip(planos, ingles) if not i)
+    if any(ingles) and letras_es >= 200:
+        limpio = [x for x, i in zip(limpio, ingles) if not i]
+        letras = letras_es
     return "\n".join(limpio), letras
 
 

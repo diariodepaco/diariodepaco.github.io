@@ -114,9 +114,12 @@ PLANTILLA = re.compile(r"\{\{[^{}]{0,80}\}\}|\[\s*[A-ZÁÉÍÓÚÑ]{2,}(?:\s+[A-
 
 
 def es_ingles(t):
+    # ante cualquier rastro de castellano (tildes, ñ, ¿¡ o una palabra como «de», «en», «la») no se toca:
+    # así «The Dark Side of the Moon cumple 50 años» o «Who Are You, de The Who» siguen entrando
+    if re.search(r"[áéíóúñÁÉÍÓÚÑ¿¡]", t):
+        return False
     t = sin_tildes(t)
-    en, es = len(INGLES.findall(t)), len(CASTELLANO.findall(t))
-    return en >= 3 and en > 2 * es
+    return len(INGLES.findall(t)) >= 3 and not CASTELLANO.search(t)
 
 
 MARCADOR = re.compile(r"\(\s*\d{1,2}\s*-\s*\d{1,2}\s*\)")
