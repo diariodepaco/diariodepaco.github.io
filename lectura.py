@@ -26,20 +26,47 @@ RELLENO_CORTO = re.compile(r"(?i)(fuente de la imagen|pie de foto|t[ií]tulo de 
                            r"bolet[ií]n|descarga (nuestra|la) app|s[ií]guenos|activa las notificaciones|haz clic|pincha aqu[ií]|"
                            r"lee aqu[ií]|lee otras|otras noticias|ap[uú]ntate|seguirnos|s[ií]guenos|canal de whatsapp|^foto(grafía)?s?\s*[:|]|^imagen\s*[:|]|^v[ií]deo\s*[:|])")
 MAQUETA = re.compile(r"\{\{[^{}]{0,80}\}\}|\[\s*EN PENDIENTE\s*\]")
-# párrafos en inglés dentro de una noticia en castellano (Maldita.es mete las dos versiones en la misma página)
+# Noticias bilingües (Maldita.es pone cada frase en castellano y debajo su traducción al inglés).
+# Solo se filtra frase a frase si la noticia tiene al menos 3 frases claramente inglesas: así una noticia de
+# música que cita «The Dark Side of the Moon» o «The Who» nunca se toca.
 _EN = re.compile(r"\b(the|and|of|to|your|you|our|we|they|these|those|this|that|what|which|who|how|why|is|are|was|were|"
                  r"have|has|had|will|would|could|should|can|with|from|for|about|than|after|before|into|its|their|"
-                 r"been|be|not|but|or|at|by|on|in|it|per|cent|says|said)\b", re.I)
+                 r"been|be|being|not|but|or|at|by|on|in|it|per|cent|says|said|do|does|did|there|here|them|his|she|"
+                 r"her|him|when|where|while|if|an|some|most|many|more|all|only|also|even|made|found|which|because)\b", re.I)
 _ES = re.compile(r"\b(el|la|los|las|de|del|en|y|que|con|por|para|un|una|se|su|sus|es|al|lo|como|m[aá]s|pero|"
-                 r"sobre|entre|desde|tras|ha|han|son|fue|est[aá]|este|sin|ya|muy|tambi[eé]n|seg[uú]n)\b", re.I)
+                 r"sobre|entre|desde|tras|ha|han|son|fue|est[aá]|este|esta|sin|ya|muy|tambi[eé]n|seg[uú]n|hemos|nos|le|les|"
+                 r"o|ni|cuando|donde|hay|era|unos|unas)\b", re.I)
+_TILDES = re.compile(r"[áéíóúñÁÉÍÓÚÑ¿¡]")
+_FRASES = re.compile(r"(?<=[.!?…])\s+(?=[\"“«'‘(¿¡]?[A-ZÁÉÍÓÚÑ0-9])")
+
+
+def _cuenta(t):
+    return len(_EN.findall(t)), len(_ES.findall(t)), bool(_TILDES.search(t))
+
+
+def frase_inglesa(t, bilingue=False):
+    """Claramente inglesa (cualquier noticia) o, en una noticia bilingüe, cualquier frase sin rastro de castellano."""
+    en, es, tildes = _cuenta(t)
+    if tildes or es:
+        return False
+    return en >= 1 if bilingue else (en >= 4 and len(t) >= 25)
 
 
 def es_ingles(t):
-    # un párrafo con tildes o ñ es castellano aunque cite discos o grupos en inglés
-    if re.search(r"[áéíóúñÁÉÍÓÚÑ¿¡]", t):
-        return False
-    en, es = len(_EN.findall(t)), len(_ES.findall(t))
-    return en >= 4 and en > 3 * es
+    return frase_inglesa(t)
+
+
+def es_bilingue(texto):
+    frases = [f for f in _FRASES.split(texto) if f.strip()]
+    inglesas = sum(1 for f in frases if frase_inglesa(f))
+    castellano = sum(len(f) for f in frases if not frase_inglesa(f, True))
+    return inglesas >= 3 and castellano >= 200
+
+
+def quitar_ingles(texto):
+    """Texto plano de una noticia bilingüe → solo las frases en castellano."""
+    queda = " ".join(f for f in _FRASES.split(texto) if f.strip() and not frase_inglesa(f, True)).strip()
+    return queda if re.search(r"[^\W\d_]", queda) else ""  # un «2.» suelto de una línea inglesa numerada, fuera
 
 
 ENTRADA = re.compile(r"(?i)^\s*(la entrada|the post|el art[ií]culo) .{0,400} (se public[oó]|apareci[oó]|appeared|fue escrita|fue publicad[oa]) (primero )?(en|on)\b")
@@ -190,13 +217,27 @@ def limpiar_html(fuente):
         else:
             limpio.append("<%s>%s</%s>" % (tag, dentro.strip(), tag))
         letras += len(plano)
-    # si la noticia está sobre todo en castellano, fuera los párrafos en inglés (y al revés no se toca nada)
-    planos = [re.sub(r"\s+", " ", html.unescape(re.sub(r"<[^>]+>", " ", x))).strip() for x in limpio]
-    ingles = [es_ingles(x) for x in planos]
-    letras_es = sum(len(x) for x, i in zip(planos, ingles) if not i)
-    if any(ingles) and letras_es >= 200:
-        limpio = [x for x, i in zip(limpio, ingles) if not i]
-        letras = letras_es
+    # noticia bilingüe: fuera las frases en inglés (párrafos, titulillos, listas y párrafos que mezclan los dos idiomas)
+    def plano_de(x):
+        return re.sub(r"\s+", " ", html.unescape(re.sub(r"<[^>]+>", " ", x))).strip()
+    if es_bilingue(" ".join(plano_de(x) for x in limpio)):
+        nuevo, letras = [], 0
+        for bloque in limpio:
+            tag = re.match(r"<(\w+)>", bloque).group(1)
+            if tag in ("ul", "ol"):
+                items = [quitar_ingles(plano_de(i)) for i in re.findall(r"(?s)<li>(.*?)</li>", bloque)]
+                items = [i for i in items if i]
+                if items:
+                    nuevo.append("<%s>%s</%s>" % (tag, "".join("<li>%s</li>" % _esc(i) for i in items), tag))
+                    letras += sum(len(i) for i in items)
+                continue
+            plano = plano_de(bloque)
+            queda = quitar_ingles(plano)
+            if not queda:
+                continue
+            nuevo.append(bloque if queda == plano else "<%s>%s</%s>" % (tag, _esc(queda), tag))
+            letras += len(queda)
+        limpio = nuevo
     return "\n".join(limpio), letras
 
 

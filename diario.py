@@ -758,6 +758,8 @@ def preparar(config, resultados):
             if len(PLANTILLA.findall(n["r"] or "")) >= 3:
                 n["r"] = ""  # el «resumen» era la maqueta de la web del medio: se saca luego del propio texto
             n["r"] = limpiar_texto(n["r"], 1200)
+            if any(lectura.frase_inglesa(x) for x in lectura._FRASES.split(n["r"])):
+                n["r"] = lectura.quitar_ingles(n["r"])  # resumen bilingüe (Maldita.es): solo el castellano
             if n["u"] in urls:
                 continue
             urls.add(n["u"])
