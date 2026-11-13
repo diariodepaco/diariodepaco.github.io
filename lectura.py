@@ -25,6 +25,7 @@ RELLENO = re.compile(r"(?i)^\s*(la entrada .{0,300} (se public[oó]|apareci[oó]
 RELLENO_CORTO = re.compile(r"(?i)(fuente de la imagen|pie de foto|t[ií]tulo de la imagen|^archivo\s*[-–]|suscrib|newsletter|"
                            r"bolet[ií]n|descarga (nuestra|la) app|s[ií]guenos|activa las notificaciones|haz clic|pincha aqu[ií]|"
                            r"lee aqu[ií]|lee otras|otras noticias|ap[uú]ntate|seguirnos|s[ií]guenos|canal de whatsapp|^foto(grafía)?s?\s*[:|]|^imagen\s*[:|]|^v[ií]deo\s*[:|])")
+MAQUETA = re.compile(r"\{\{[^{}]{0,80}\}\}|\[\s*EN PENDIENTE\s*\]")
 ENTRADA = re.compile(r"(?i)^\s*(la entrada|the post|el art[ií]culo) .{0,400} (se public[oó]|apareci[oó]|appeared|fue escrita|fue publicad[oa]) (primero )?(en|on)\b")
 
 
@@ -150,6 +151,8 @@ def limpiar_html(fuente):
     for k, (tag, dentro) in enumerate(bloques):
         plano = re.sub(r"\s+", " ", html.unescape(re.sub(r"<[^>]+>", " ", dentro))).strip()
         if not plano or ENTRADA.search(plano) or (tag in ("ul", "ol") and len(plano) < 40):
+            continue
+        if MAQUETA.search(plano):  # restos de plantilla de la web del medio ({{x.txt}}, [EN PENDIENTE]…)
             continue
         if tag in ("p", "h3") and (
                 (len(plano) < 140 and RELLENO.search(plano)) or (len(plano) < 320 and RELLENO_CORTO.search(plano)) or

@@ -102,6 +102,23 @@ REGUETON = re.compile(r"\b(reggaet\w*|reguet\w*|regaet\w*|perreo|dembow|trap lat
 # catalán, gallego, euskera…: con dos señales o más, el titular no está en castellano
 OTRO_IDIOMA = re.compile(r"\b[ld][’'](?!hondt)\w|\b(amb|els|dels|diumenge|dilluns|dimarts|dimecres|dijous|divendres|"
                          r"dissabte|perque|aquesta|aquest|tambe|vinent|aixo|avui|ahir|dema|nova|nou|nous|feina|i)\b")
+# inglés: algunos medios (p. ej. Maldita.es) publican también sus traducciones en el mismo canal.
+# Cuenta palabras gramaticales inglesas frente a castellanas, para no tirar «The Who anuncia gira…»
+INGLES = re.compile(r"\b(the|and|of|to|your|you|our|we|they|these|those|this|that|what|which|who|how|why|is|are|was|were|"
+                    r"have|has|had|will|would|could|should|can|with|from|for|about|than|after|before|into|its|their|"
+                    r"been|be|not|but|or|at|by|on|in|it|per|cent|says|said|new)\b")
+CASTELLANO = re.compile(r"\b(el|la|los|las|de|del|en|y|que|con|por|para|un|una|se|su|sus|es|al|lo|como|mas|pero|"
+                        r"sobre|entre|desde|tras|ha|han|son|fue|esta|este|sin|ya|muy|tambien|segun)\b")
+# restos de la maqueta de una web que se cuelan en el canal: {{x.txt}}, [EN PENDIENTE], «ES | EN»…
+PLANTILLA = re.compile(r"\{\{[^{}]{0,80}\}\}|\[\s*[A-ZÁÉÍÓÚÑ]{2,}(?:\s+[A-ZÁÉÍÓÚÑ]{2,})*\s*\]|\b(?:ES|EN)\s*\|\s*(?:ES|EN)\b")
+
+
+def es_ingles(t):
+    t = sin_tildes(t)
+    en, es = len(INGLES.findall(t)), len(CASTELLANO.findall(t))
+    return en >= 3 and en > 2 * es
+
+
 MARCADOR = re.compile(r"\(\s*\d{1,2}\s*-\s*\d{1,2}\s*\)")
 OPINION_URL = re.compile(r"/(opinion|opiniones|tribuna|tribunas|columnas?|editorial|editoriales|blogs?/opinion|"
                          r"cartas-al-director|humor|vinetas?)(/|-|$)", re.I)
@@ -156,6 +173,7 @@ def limpiar_texto(t, maximo=None):
     for _ in range(2):
         if "&" in t:
             t = html.unescape(t)
+    t = PLANTILLA.sub(" ", t)
     t = t.replace("\xa0", " ").replace("​", "")
     t = re.sub(r"\s+", " ", t).strip()
     for p in TROCITOS_FINALES:
@@ -683,7 +701,7 @@ def motivo_descarte(n, filtro_opinion=True):
         return "reguetón"
     if re.search(r"(?i)/(directo|en-directo|live)(/|-|$)|-directo-|-en-directo", ruta):
         return "cebo"
-    if len(OTRO_IDIOMA.findall(t)) >= 2:
+    if len(OTRO_IDIOMA.findall(t)) >= 2 or es_ingles(n["t"]) or re.search(r"(?i)^/en/", ruta):
         return "otro idioma"
     if MARCADOR.search(t):
         return "deporte"
@@ -734,6 +752,8 @@ def preparar(config, resultados):
         urls = set()
         for n in notas:
             n["t"] = en_minusculas(limpiar_texto(n["t"], 220))
+            if len(PLANTILLA.findall(n["r"] or "")) >= 3:
+                n["r"] = ""  # el «resumen» era la maqueta de la web del medio: se saca luego del propio texto
             n["r"] = limpiar_texto(n["r"], 1200)
             if n["u"] in urls:
                 continue
@@ -1275,6 +1295,10 @@ def preparar_lecturas(config, secciones, sin_red=False):
     for n in notas:
         if n.get("leer"):
             n["leer"] = re.sub(r"(?s)<a\b[^>]*>(.*?)</a>", r"\1", n["leer"])
+    # sin resumen en el canal (o era basura): se usa el principio del propio texto
+    for n in notas:
+        if not n["r"] and n.get("leer"):
+            n["r"] = limpiar_texto(n["leer"], 300)
     con_texto = [n for n in notas if n.get("leer")]
     elegir_fotos(con_texto, sin_red)
     por_fuente = {}
