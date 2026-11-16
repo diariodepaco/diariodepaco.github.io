@@ -519,6 +519,19 @@ def url_wordpress(espec):
     if not ids:
         datos, _, _ = descargar(sitio + "/wp-json/wp/v2/categories?slug=" + urllib.parse.quote(categoria) + "&_fields=id")
         ids = [str(c["id"]) for c in json.loads(datos) if "id" in c]
+        # también sus subcategorías (dos niveles): WordPress no las incluye solo, y hay medios que publican
+        # cada noticia en la subcategoría («mundo» → «europa», «america»…) y no en la sección principal
+        nivel = list(ids)
+        for _ in range(2):
+            hijas = []
+            for i in nivel:
+                try:
+                    datos, _, _ = descargar(sitio + "/wp-json/wp/v2/categories?parent=%s&per_page=100&_fields=id" % i)
+                    hijas += [str(c["id"]) for c in json.loads(datos) if "id" in c and str(c["id"]) not in ids]
+                except Exception:  # noqa: BLE001
+                    pass
+            ids += hijas
+            nivel = hijas
         if ids:
             CATEGORIAS_WP[clave_cat] = ids
     if not ids:
@@ -1132,7 +1145,7 @@ def generar_web(config, secciones, estados, descartes, tiempo, salida, paquete=N
         filas.append("<tr class='%s'><td><b>%s</b>%s</td><td>%s</td><td>%d</td><td>%d</td><td>%s</td></tr>" % (
             "ok" if e["ok"] else "mal", esc(e["nombre"]), " (autodescubierto)" if e.get("autodescubierto") else "",
             esc(e["canal"] or "—"), e["leidas"], e.get("validas", 0), esc(desc)) +
-            ("<tr class='err'><td colspan=5>%s</td></tr>" % "<br>".join(esc(x) for x in e["errores"][-4:])
+            ("<tr class='err'><td colspan=5>%s</td></tr>" % "<br>".join(esc(x) for x in e["errores"][:12])
              if not e["ok"] and e["errores"] else ""))
     porm = {}
     for d in descartes:
