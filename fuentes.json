@@ -24,6 +24,8 @@
      "feeds": [], "home": "https://www.europapress.es/islas-canarias/"},
     {"nombre": "Infonorte Digital", "tipo": "Periódico local del norte de Gran Canaria", "seccion": "canarias", "max": 6,
      "feeds": ["https://www.infonortedigital.com/?format=feed&type=rss", "https://www.infonortedigital.com/index.php?format=feed&type=rss", "wp:https://www.infonortedigital.com", "https://www.infonortedigital.com/feed/"], "home": "https://www.infonortedigital.com/"},
+    {"nombre": "Gobierno de Canarias", "tipo": "Notas de prensa oficiales del Gobierno de Canarias", "seccion": "canarias", "max": 5,
+     "feeds": ["https://www3.gobiernodecanarias.org/noticias/feed/", "wp:https://www3.gobiernodecanarias.org/noticias"], "home": "https://www3.gobiernodecanarias.org/noticias/"},
 
     {"nombre": "EFE", "tipo": "Agencia EFE, agencia pública de noticias", "seccion": "espana", "max": 8,
      "feeds": ["wp:https://efe.com|espana", "https://efe.com/espana/?feed=rss2", "https://efe.com/espana/feed/atom/"], "home": "https://efe.com/espana/"},
@@ -52,6 +54,8 @@
      "feeds": ["https://www.france24.com/es/rss"], "home": "https://www.france24.com/es/"},
     {"nombre": "DW", "tipo": "Deutsche Welle, radiotelevisión pública alemana, en español", "seccion": "mundo", "max": 5,
      "feeds": ["https://rss.dw.com/rdf/rss-sp-all", "https://rss.dw.com/xml/rss-sp-all"], "home": "https://www.dw.com/es/"},
+    {"nombre": "Noticias ONU", "tipo": "Servicio de noticias de Naciones Unidas, en español", "seccion": "mundo", "max": 5,
+     "feeds": ["https://news.un.org/feed/subscribe/es/news/all/rss.xml"], "home": "https://news.un.org/es/"},
 
     {"nombre": "Agencia SINC", "tipo": "Agencia pública de noticias científicas (FECYT)", "seccion": "ciencia", "max": 6,
      "unir": true, "feeds": ["https://www.agenciasinc.es/feed/Ciencia", "https://www.agenciasinc.es/feed/Tierra"], "home": "https://www.agenciasinc.es/"},
@@ -67,6 +71,10 @@
      "feeds": ["https://www.csic.es/es/rss.xml", "https://www.csic.es/es/rss/noticias", "https://www.csic.es/rss.xml"], "home": "https://www.csic.es/es/actualidad-del-csic"},
     {"nombre": "Naukas", "tipo": "Divulgación científica escrita por científicos", "seccion": "ciencia", "max": 4,
      "feeds": ["wp:https://naukas.com", "https://naukas.com/feed/"], "home": "https://naukas.com/"},
+    {"nombre": "ESO", "tipo": "Observatorio Europeo Austral (España es miembro), comunicados en español", "seccion": "ciencia", "max": 3,
+     "feeds": ["https://www.eso.org/public/spain/news/feed/"], "home": "https://www.eso.org/public/spain/news/"},
+    {"nombre": "Cuaderno de Cultura Científica", "tipo": "Divulgación de la Cátedra de Cultura Científica de la Universidad del País Vasco", "seccion": "ciencia", "max": 3,
+     "feeds": ["https://culturacientifica.com/feed/", "wp:https://culturacientifica.com"], "home": "https://culturacientifica.com/"},
     {"nombre": "The Conversation", "tipo": "Artículos de profesores e investigadores universitarios, sin ánimo de lucro", "seccion": "auto", "max": 5,
      "feeds": ["https://theconversation.com/es/articles.atom"], "home": "https://theconversation.com/es"},
 
@@ -94,6 +102,8 @@
      "feeds": ["wp:https://efesalud.com", "https://efesalud.com/feed/"], "home": "https://efesalud.com/"},
     {"nombre": "SINC Salud", "tipo": "Agencia pública de noticias científicas (FECYT), sección de salud", "seccion": "salud", "max": 5,
      "feeds": ["https://www.agenciasinc.es/feed/Salud"], "home": "https://www.agenciasinc.es/"},
+    {"nombre": "OMS", "tipo": "Organización Mundial de la Salud, noticias en español", "seccion": "salud", "max": 4,
+     "feeds": ["https://www.who.int/rss-feeds/news-spanish.xml"], "home": "https://www.who.int/es/news"},
 
     {"nombre": "EFE Agro", "tipo": "Agencia EFE, sección de agricultura y alimentación", "seccion": "bodega", "max": 6, "exigir": "vino|vinos|vinic\\w*|vitivinic\\w*|bodega\\w*|vendimia\\w*|vinedo\\w*|uva|uvas|rioja|denominacion\\w* de origen|queso\\w*|miel|mieles|apicult\\w*|platano\\w*|aguacate\\w*|mango\\w*|papaya\\w*|fruta\\w*|gastronom\\w*|enolog\\w*|sumiller\\w*|cata|catas|cava|tinto\\w*|malvasia|listan|albarino|tempranillo|garnacha|verdejo|aceite de oliva|cocina|cocinero\\w*|chef\\w*|restaurante\\w*|receta\\w*",
      "feeds": ["wp:https://efeagro.com", "https://efeagro.com/feed/"], "home": "https://efeagro.com/"},

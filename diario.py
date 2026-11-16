@@ -110,7 +110,7 @@ INGLES = re.compile(r"\b(the|and|of|to|your|you|our|we|they|these|those|this|tha
 CASTELLANO = re.compile(r"\b(el|la|los|las|de|del|en|y|que|con|por|para|un|una|se|su|sus|es|al|lo|como|mas|pero|"
                         r"sobre|entre|desde|tras|ha|han|son|fue|esta|este|sin|ya|muy|tambien|segun)\b")
 # restos de la maqueta de una web que se cuelan en el canal: {{x.txt}}, [EN PENDIENTE], «ES | EN»…
-PLANTILLA = re.compile(r"\{\{[^{}]{0,80}\}\}|\[\s*[A-ZÁÉÍÓÚÑ]{2,}(?:\s+[A-ZÁÉÍÓÚÑ]{2,})*\s*\]|\b(?:ES|EN)\s*\|\s*(?:ES|EN)\b")
+PLANTILLA = re.compile(r"\{\{[^{}]{0,80}\}\}|\[[^\[\]]{0,60}(?:PENDIENTE|EJEMPLO|REVISAR|TRADUCCI)[^\[\]]{0,60}\]|\[\s*[A-ZÁÉÍÓÚÑ]{2,}(?:\s+[A-ZÁÉÍÓÚÑ]{2,})*\s*\]|\b(?:ES|EN)\s*\|\s*(?:ES|EN)\b")
 
 
 def es_ingles(t):
@@ -821,9 +821,10 @@ def preparar(config, resultados):
             if len(dentro) >= min(8, len(candidatas)):
                 break
 
-        def puntos(n):
-            p = (n["d"] or AHORA - dt.timedelta(hours=12)).timestamp()
+        def extra(n):
+            """Prioridades de la sección (en segundos que se suman a la hora de la noticia)."""
             texto = sin_tildes(n["t"] + " " + n["r"])
+            p = 0
             if n["galdar"]:
                 p += 18 * 3600
             elif sid == "canarias" and GRAN_CANARIA.search(texto):
@@ -838,6 +839,9 @@ def preparar(config, resultados):
             if sid == "futbol" and es_ud(n):
                 p += 72 * 3600  # la UD Las Palmas, siempre arriba
             return p
+
+        def puntos(n):
+            return (n["d"] or AHORA - dt.timedelta(hours=12)).timestamp() + extra(n)
         dentro.sort(key=puntos, reverse=True)
         por_fuente, final = {}, []
         for n in dentro:
@@ -847,6 +851,24 @@ def preparar(config, resultados):
             final.append(n)
             if len(final) >= sec.get("max", 20):
                 break
+        # Cada medio tiene al menos un hueco (su mejor noticia), para que las fuentes pequeñas no desaparezcan
+        # en los días de muchas noticias. El hueco se le quita a la noticia menos importante de un medio que
+        # ya tenga varias, y NUNCA a una con prioridad (UD, Gáldar, Gran Canaria, astronomía, vinos…).
+        for n in dentro:  # ya están de mejor a peor: la primera de cada medio es su mejor noticia
+            if n["f"] in por_fuente:
+                continue
+            por_fuente[n["f"]] = 0
+            quitables = [x for x in final if not extra(x) and por_fuente.get(x["f"], 0) >= 2]
+            if len(final) < sec.get("max", 20):
+                final.append(n)
+            elif quitables:
+                fuera = min(quitables, key=puntos)
+                final.remove(fuera)
+                por_fuente[fuera["f"]] -= 1
+                final.append(n)
+            else:
+                continue
+            por_fuente[n["f"]] = 1
         final.sort(key=lambda n: (sid == "futbol" and es_ud(n),
                                   n["d"] or AHORA - dt.timedelta(hours=12)), reverse=True)
         sec["notas"] = final
@@ -1303,7 +1325,7 @@ def preparar_lecturas(config, secciones, sin_red=False):
     # sin resumen en el canal (o era basura): se usa el principio del propio texto
     for n in notas:
         if not n["r"] and n.get("leer"):
-            n["r"] = limpiar_texto(n["leer"], 300)
+            n["r"] = limpiar_texto(" ".join(re.findall(r"(?s)<p>(.*?)</p>", n["leer"])) or n["leer"], 300)
     con_texto = [n for n in notas if n.get("leer")]
     elegir_fotos(con_texto, sin_red)
     por_fuente = {}

@@ -16,16 +16,20 @@ No hace falta ningún servidor ni pagar nada, y Paco no necesita a Claude para n
 
 | Sección | Fuentes |
 |---|---|
-| Gran Canaria y Canarias | Televisión Canaria (RTVC), EFE Canarias, Canarias Ahora, Europa Press Canarias, Infonorte Digital (norte de Gran Canaria) |
+| Gran Canaria y Canarias | Televisión Canaria (RTVC), EFE Canarias, Canarias Ahora, Europa Press Canarias, Infonorte Digital (norte de Gran Canaria), Gobierno de Canarias |
 | España | EFE, RTVE, Europa Press, elDiario.es, Civio, Maldita.es |
-| Mundo | EFE, Europa Press, BBC News Mundo, France 24, DW |
-| Ciencia y espacio | Agencia SINC, EFE Ciencia (solo ciencia, no aparatos), Instituto de Astrofísica de Canarias, Eureka (Daniel Marín), Naukas, The Conversation |
+| Mundo | EFE, Europa Press, BBC News Mundo, France 24, DW, Noticias ONU |
+| Ciencia y espacio | Agencia SINC, EFE Ciencia (solo ciencia, no aparatos), Instituto de Astrofísica de Canarias, Eureka (Daniel Marín), Naukas, ESO, Cuaderno de Cultura Científica, The Conversation |
 | Historia y arqueología | La Brújula Verde, Desperta Ferro, El Museo Canario, The Conversation |
 | Cultura | EFE Cultura, elDiario.es Cultura (sin reguetón) |
-| Salud | EFE Salud, SINC Salud |
+| Salud | EFE Salud, SINC Salud, OMS |
 | La Bodega: vino y buena mesa | EFE Agro (solo vino, quesos, mieles, frutas y gastronomía), La Prensa del Rioja, Vinetur (solo vino y quesos); lo canario, arriba |
 | Música | Efe Eme, Ruta 66 (sin nada de reguetón) |
 | UD Las Palmas y fútbol | Web de la UD Las Palmas, Europa Press Deportes y el fútbol de las demás fuentes; la UD siempre arriba |
+
+Cada medio tiene al menos una noticia asegurada en su sección (su mejor noticia), para que las fuentes pequeñas no desaparezcan los días de muchas noticias. Ese hueco se le quita a la noticia menos importante de un medio que ya tenga varias, y nunca a una con prioridad (UD, Gáldar, Gran Canaria, astronomía, vinos canarios).
+
+Maldita.es publica algunas investigaciones bilingües (frase en castellano y debajo su traducción) y con restos de plantilla (`{{…}}`, `[TEXTO PENDIENTE]`): el Diario quita las frases en inglés y esos restos, y descarta los titulares que están enteros en inglés. Las noticias normales en castellano que citan discos o grupos en inglés no se tocan.
 
 Desactivadas (siguen en `fuentes.json` con una nota de por qué): Servimedia (RSS abandonado en 2022), CSIC, Historia National Geographic y Cueva Pintada de Gáldar (bloquean las lecturas automáticas), Popular 1, Europa Press Ciencia, Vinos de Canarias (certificado de seguridad mal puesto) y Sobremesa (sin RSS). Si algún día vuelven a funcionar, basta con quitar `"activa": false`.
 

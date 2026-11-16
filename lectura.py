@@ -25,7 +25,7 @@ RELLENO = re.compile(r"(?i)^\s*(la entrada .{0,300} (se public[oó]|apareci[oó]
 RELLENO_CORTO = re.compile(r"(?i)(fuente de la imagen|pie de foto|t[ií]tulo de la imagen|^archivo\s*[-–]|suscrib|newsletter|"
                            r"bolet[ií]n|descarga (nuestra|la) app|s[ií]guenos|activa las notificaciones|haz clic|pincha aqu[ií]|"
                            r"lee aqu[ií]|lee otras|otras noticias|ap[uú]ntate|seguirnos|s[ií]guenos|canal de whatsapp|^foto(grafía)?s?\s*[:|]|^imagen\s*[:|]|^v[ií]deo\s*[:|])")
-MAQUETA = re.compile(r"\{\{[^{}]{0,80}\}\}|\[\s*EN PENDIENTE\s*\]")
+MAQUETA = re.compile(r"\{\{[^{}]{0,80}\}\}|\[[^\[\]<>]{0,60}(?:PENDIENTE|EJEMPLO|REVISAR|TRADUCCI)[^\[\]<>]{0,60}\]", re.I)
 # Noticias bilingües (Maldita.es pone cada frase en castellano y debajo su traducción al inglés).
 # Solo se filtra frase a frase si la noticia tiene al menos 3 frases claramente inglesas: así una noticia de
 # música que cita «The Dark Side of the Moon» o «The Who» nunca se toca.
@@ -63,9 +63,21 @@ def es_bilingue(texto):
     return inglesas >= 3 and castellano >= 200
 
 
+def _cola_inglesa(f):
+    """«La investigación completa The full investigation» → «La investigación completa» (sin tocar «TikTok»)."""
+    for m in re.finditer(r"(?:(?<=\s)|(?<=[.!?:…»\"”)]))(?=[A-Z][a-z']*\b)", f):
+        if m.start() == 0:
+            continue
+        antes, despues = f[:m.start()].strip(), f[m.start():].strip()
+        if frase_inglesa(despues, True) and not frase_inglesa(antes, True) and re.search(r"[^\W\d_]{2}", antes):
+            return antes
+    return f
+
+
 def quitar_ingles(texto):
     """Texto plano de una noticia bilingüe → solo las frases en castellano."""
-    queda = " ".join(f for f in _FRASES.split(texto) if f.strip() and not frase_inglesa(f, True)).strip()
+    texto = re.sub(r"([.!?…])(?=[A-ZÁÉÍÓÚÑ¿¡])", r"\1 ", texto)
+    queda = " ".join(_cola_inglesa(f) for f in _FRASES.split(texto) if f.strip() and not frase_inglesa(f, True)).strip()
     return queda if re.search(r"[^\W\d_]", queda) else ""  # un «2.» suelto de una línea inglesa numerada, fuera
 
 
@@ -179,6 +191,7 @@ def limpiar_html(fuente):
     if not fuente:
         return "", 0
     fuente = re.sub(r"(?is)<!\[CDATA\[(.*?)\]\]>", r"\1", fuente)
+    fuente = MAQUETA.sub(" ", fuente)  # restos de plantilla de la web del medio ({{x.txt}}, [TEXTO PENDIENTE]…)
     if "<" not in fuente:  # texto plano: un párrafo por línea
         fuente = "".join("<p>%s</p>" % html.escape(x) for x in re.split(r"\n\s*\n|\n", fuente) if x.strip())
     lim = _Limpiador()
@@ -195,7 +208,7 @@ def limpiar_html(fuente):
         plano = re.sub(r"\s+", " ", html.unescape(re.sub(r"<[^>]+>", " ", dentro))).strip()
         if not plano or ENTRADA.search(plano) or (tag in ("ul", "ol") and len(plano) < 40):
             continue
-        if MAQUETA.search(plano):  # restos de plantilla de la web del medio ({{x.txt}}, [EN PENDIENTE]…)
+        if not re.search(r"[^\W\d_]{2}", plano):  # solo números o signos (p. ej. «1. 1» tras quitar un marcador)
             continue
         if tag in ("p", "h3") and (
                 (len(plano) < 140 and RELLENO.search(plano)) or (len(plano) < 320 and RELLENO_CORTO.search(plano)) or
