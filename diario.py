@@ -514,6 +514,9 @@ def url_wordpress(espec):
     campos = "&_fields=title,link,date_gmt,excerpt,content,jetpack_featured_media_url"
     if not categoria:
         return sitio + "/wp-json/wp/v2/posts?per_page=40" + campos
+    if categoria == "*":
+        # todo el medio (las 100 últimas, el máximo de WordPress); se combina con «solo_url» en fuentes.json
+        return sitio + "/wp-json/wp/v2/posts?per_page=100" + campos
     clave_cat = sitio + "|" + categoria
     ids = CATEGORIAS_WP.get(clave_cat)
     if not ids:
@@ -776,6 +779,10 @@ def preparar(config, resultados):
             if n["u"] in urls:
                 continue
             urls.add(n["u"])
+            if f.get("solo_url") and not re.search(f["solo_url"], n["u"]):
+                # se lee todo el medio y solo vale la sección cuya dirección encaja (p. ej. efe.com/mundo/)
+                estado["descartadas"]["de otra sección del medio"] = estado["descartadas"].get("de otra sección del medio", 0) + 1
+                continue
             if sin_tildes(n["r"]).startswith(sin_tildes(n["t"])[:60]):
                 n["r"] = n["r"][len(n["t"]):].lstrip(" .:-–—")
             n["r"] = limpiar_texto(n["r"], 300)

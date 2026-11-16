@@ -43,8 +43,9 @@
     {"nombre": "Maldita.es", "tipo": "Fundación sin ánimo de lucro contra bulos y desinformación", "seccion": "espana", "max": 3,
      "feeds": ["https://maldita.es/feed/"], "home": "https://maldita.es/"},
 
-    {"nombre": "EFE Mundo", "tipo": "Agencia EFE, agencia pública de noticias", "seccion": "mundo", "max": 10,
-     "feeds": ["wp:https://efe.com|mundo", "wp:https://efe.com|internacional", "https://efe.com/mundo/?feed=rss2", "https://efe.com/mundo/feed/atom/"], "home": "https://efe.com/mundo/"},
+    {"nombre": "EFE Mundo", "tipo": "Agencia EFE, agencia pública de noticias", "seccion": "mundo", "max": 10, "solo_url": "efe\\.com/mundo/",
+     "_nota": "Desde el 4/11/2026 EFE no clasifica sus noticias internacionales en la categoría «mundo» de WordPress: si sigue parada, se leen las 100 últimas de todo EFE y se quedan las de efe.com/mundo/",
+     "feeds": ["wp:https://efe.com|mundo", "wp:https://efe.com|*", "https://efe.com/mundo/?feed=rss2"], "home": "https://efe.com/mundo/"},
     {"nombre": "RTVE Internacional", "activa": false, "_nota": "RTVE dejó de actualizar sus canales RSS en 2022", "tipo": "Radio y televisión pública de España", "seccion": "mundo", "max": 6,
      "feeds": ["https://api2.rtve.es/rss/temas_mundo.xml", "https://www.rtve.es/rss/temas_mundo.xml"], "home": "https://www.rtve.es/noticias/internacional/"},
     {"nombre": "Europa Press Internacional", "tipo": "Agencia de noticias", "seccion": "mundo", "max": 8, "titulo_canal": "internacional|mundo",
