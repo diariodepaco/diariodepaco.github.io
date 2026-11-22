@@ -50,15 +50,21 @@
 
   // Noticias guardadas (cifradas): se descifran aquí, una vez por sesión
   function b64(t) { var x = atob(t), a = new Uint8Array(x.length); for (var i = 0; i < x.length; i++) a[i] = x.charCodeAt(i); return a; }
-  window.diarioLecturas = function () {
+  // fresco = true: sin usar nada guardado (por si el navegador tenía los textos de una edición anterior)
+  window.diarioLecturas = function (fresco) {
     var k = clave();
     if (!k || !window.crypto || !crypto.subtle || !window.fetch) return Promise.reject(new Error('sin clave'));
     var edicion = document.body.getAttribute('data-lect') || '';
-    try {
-      var g = JSON.parse(sessionStorage.getItem('diario_lecturas') || 'null');
-      if (g && edicion && g.sal === edicion) return Promise.resolve(g.lista);
-    } catch (x) {}
-    return fetch('lecturas.json').then(function (r) { return r.json(); }).then(function (p) {
+    if (!fresco) {
+      try {
+        var g = JSON.parse(sessionStorage.getItem('diario_lecturas') || 'null');
+        if (g && edicion && g.sal === edicion) return Promise.resolve(g.lista);
+      } catch (x) {}
+    }
+    // Cada edición pide SUS textos (lecturas.json?e=…): GitHub deja guardar los archivos 10 minutos en el
+    // navegador, y sin esto una lista nueva podía abrir los textos de la edición anterior («ya no está»)
+    var url = fresco ? 'lecturas.json?_=' + Date.now() : 'lecturas.json' + (edicion ? '?e=' + encodeURIComponent(edicion) : '');
+    return fetch(url, fresco ? { cache: 'no-store' } : {}).then(function (r) { return r.json(); }).then(function (p) {
       try {
         var g2 = JSON.parse(sessionStorage.getItem('diario_lecturas') || 'null');
         if (g2 && g2.sal === p.sal) return g2.lista;
