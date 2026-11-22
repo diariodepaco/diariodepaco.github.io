@@ -20,11 +20,10 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  publicar:
+  # 1) Genera la web y deja el paquete preparado para GitHub Pages
+  generar:
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    # Sin «environment»: GitHub dejó las publicaciones esperando una aprobación que nadie puede dar.
-    # deploy-pages funciona igual sin él (lo verifica con los permisos pages/id-token de arriba).
     steps:
       - uses: actions/checkout@v7
 
@@ -54,10 +53,6 @@ jobs:
         with:
           path: _site
 
-      - name: Publicar
-        id: despliegue
-        uses: actions/deploy-pages@v5
-
       # GitHub apaga las tareas programadas de un repositorio sin actividad en 60 días.
       # Esto lo evita: reactiva el horario y, si hace más de 50 días del último cambio, deja un cambio vacío.
       - name: Mantener vivo el horario automático
@@ -73,3 +68,26 @@ jobs:
             git commit --allow-empty -m "Mantener activo el horario automático"
             git push || true
           fi
+
+  # 2) Publica en GitHub Pages, en una tarea aparte como recomienda GitHub (actions/deploy-pages).
+  # Desde el 19/11/2026 GitHub a veces no «ve» todavía el paquete recién subido
+  # («No artifacts named "github-pages" were found»): si pasa, espera un minuto y lo reintenta una vez.
+  publicar:
+    needs: generar
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # Sin «environment»: GitHub dejó las publicaciones esperando una aprobación que nadie puede dar.
+    # deploy-pages funciona igual sin él (lo verifica con los permisos pages/id-token de arriba).
+    steps:
+      - name: Publicar
+        id: despliegue
+        continue-on-error: true
+        uses: actions/deploy-pages@v5
+
+      - name: Esperar un minuto si GitHub no encontró el paquete
+        if: steps.despliegue.outcome == 'failure'
+        run: sleep 60
+
+      - name: Publicar (segundo intento)
+        if: steps.despliegue.outcome == 'failure'
+        uses: actions/deploy-pages@v5
